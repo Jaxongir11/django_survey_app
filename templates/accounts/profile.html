@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Profile Page{% endblock title %}
+{% block content %}
+    <div class="row my-3 p-3">
+        <img class="rounded-circle account-img" src="{{ user.profile.avatar.url }}" style="cursor: pointer;"/>
+    </div>
+    {% if u_form.errors %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <div id="form_errors">
+                {% for key, value in u_form.errors.items %}
+                    <strong>{{ value }}</strong>
+                {% endfor %}
+            </div>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    {% endif %}
+    <div class="form-content">
+        <form method="post" enctype="multipart/form-data" id="ProfileUpdateForm" data-positions-url="{% url 'accounts:ajax_load_positions' %}" novalidate>
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="col-md-5">
+                    <div class="form-group">
+                        <label class="small mb-1">Username:</label>
+                        {{ u_form.username }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Email:</label>
+                        {{ u_form.email }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">First Name:</label>
+                        {{ u_form.first_name }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Last Name:</label>
+                        {{ u_form.last_name }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Department:</label>
+                        {{ p_form.department }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Position:</label>
+                        {{ p_form.position }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Rank:</label>
+                        {{ p_form.rank }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Gender:</label>
+                        {{ p_form.gender }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Birthday:</label>
+                        {{ p_form.birthday }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Phone Number:</label>
+                        {{ p_form.phone_number }}
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1">Change image:</label>
+                        {{ p_form.image }}
+                    </div>
+                </div>
+            </div>
+            <br><br>
+            <button type="submit" class="btn btn-dark btn-lg">Save Changes</button>
+            <button type="reset" class="btn btn-dark btn-lg">Reset</button>
+        </form>
+    </div>
+
+
+<script src="{% static 'js/jquery-3.7.1.js' %}"></script>
+<script>
+    $("#id_department").change(function () {
+      var url = $("#ProfileUpdateForm").attr("data-positions-url");  // get the url of the `load_cities` view
+      var departmentId = $(this).val();  // get the selected country ID from the HTML input
+
+      $.ajax({                       // initialize an AJAX request
+        url: url,                    // set the url of the request (= localhost:8000/hr/ajax/load-cities/)
+        data: {
+          'department': departmentId       // add the country id to the GET parameters
+        },
+        success: function (data) {   // `data` is the return of the `load_cities` view function
+          $("#id_position").html(data);  // replace the contents of the city input with the data that came from the server
+        }
+      });
+
+    });
+  </script>
+
+{% endblock content %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Superuser Profile{% endblock title %}
+{% block content %}
+    <!-- Display any additional information specific to superusers -->
+    <h2>Welcome, Superuser!</h2>
+    <p>Here's the superuser profile update form:</p>
+
+    <!-- Render the profile update form -->
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ u_form.as_p }}
+        {{ p_form.as_p }}
+        <button type="submit">Save Changes</button>
+    </form>
+{% endblock content %}
