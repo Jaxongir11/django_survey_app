@@ -1,0 +1,123 @@
+Metadata-Version: 2.1
+Name: django-birthday
+Version: 0.1.4
+Summary: Helper field and manager for working with birthdays
+Home-page: https://github.com/bashu/django-birthday
+Author: Jonas Obrist
+Author-email: jonas.obrist@divio.ch
+Maintainer: Basil Shubin
+Maintainer-email: basil.shubin@gmail.com
+License: BSD License
+Download-URL: https://github.com/bashu/django-birthday/zipball/master
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Framework :: Django
+Classifier: Framework :: Django :: 2.2
+Classifier: Framework :: Django :: 3.0
+Classifier: Framework :: Django :: 3.1
+Classifier: Framework :: Django :: 3.2
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+License-File: AUTHORS
+Provides-Extra: develop
+Requires-Dist: tox ; extra == 'develop'
+Requires-Dist: django ; extra == 'develop'
+Requires-Dist: pytest-django ; extra == 'develop'
+Requires-Dist: pytest ; extra == 'develop'
+Provides-Extra: test
+Requires-Dist: pytest-django ; extra == 'test'
+Requires-Dist: pytest-cov ; extra == 'test'
+Requires-Dist: pytest ; extra == 'test'
+
+django-birthday
+===============
+
+django-birthday is a helper library to work with birthdays in models.
+
+Authored by `Jonas Obrist <https://github.com/ojii>`_,  and some great
+`contributors <https://github.com/bashu/django-birthday/contributors>`_.
+
+.. image:: https://img.shields.io/pypi/v/django-birthday.svg
+    :target: https://pypi.python.org/pypi/django-birthday/
+
+.. image:: https://img.shields.io/pypi/dm/django-birthday.svg
+    :target: https://pypi.python.org/pypi/django-birthday/
+
+.. image:: https://img.shields.io/github/license/bashu/django-birthday.svg
+    :target: https://pypi.python.org/pypi/django-birthday/
+
+.. image:: https://img.shields.io/travis/bashu/django-birthday.svg
+    :target: https://travis-ci.com/github/bashu/django-birthday/
+
+Installation
+------------
+
+.. code-block:: bash
+
+    pip install django-birthday
+
+Usage
+-----
+
+django-birthday provides a ``birthday.fields.BirthdayField`` model
+field type which is a subclass of ``django.db.models.DateField`` and
+thus has the same characteristics as that. It also internally adds a
+second field to your model holding the day of the year for that
+birthday, this is used for the extra functionality exposed by
+``birthday.managers.BirthdayManager`` which you should use as the
+manager on your model.
+
+A model could look like this:
+
+.. code-block:: python
+
+    from django.db import models
+    from django.conf import settings
+
+    from birthday import BirthdayField, BirthdayManager
+
+
+    class UserProfile(models.Model):
+        user = models.ForeignKey(settings.AUTH_USER_MODEL)
+        birthday = BirthdayField()
+
+        objects = BirthdayManager()
+
+Get all user profiles within the next 30 days:
+
+.. code-block:: python
+
+    UserProfile.objects.get_upcoming_birthdays()
+
+Get all user profiles which have their birthday today:
+
+.. code-block:: python
+
+    UserProfile.objects.get_birthdays()
+
+Or order the user profiles according to their birthday:
+
+.. code-block:: python
+
+    UserProfile.objects.order_by_birthday()
+
+For more details, see the documentation_ at Read The Docs.
+
+License
+-------
+
+``django-birthday`` is released under the BSD license.
+
+.. _documentation: https://django-birthday.readthedocs.io/
+
+

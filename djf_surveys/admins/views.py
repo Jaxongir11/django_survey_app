@@ -7,6 +7,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.utils.decorators import method_decorator
+from django.utils.timezone import now
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse, reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
@@ -15,7 +16,7 @@ from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
-from djf_surveys.models import Survey, Question, UserAnswer
+from djf_surveys.models import Survey, Question, UserAnswer, Answer
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys.views import SurveyListView
 from djf_surveys.forms import BaseSurveyForm
@@ -209,10 +210,61 @@ class DownloadResponseSurveyView(DetailView):
 class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
     model = Survey
     template_name = "djf_surveys/admins/summary.html"
-    title_page = _("Summary")
+    title_page = _("Natija")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        summary = SummaryResponse(survey=self.get_object())
-        context['summary'] = summary
+
+        # Get current year and month
+        current_year = now().year
+        current_month = now().month
+
+        # Get the selected year and month from the request parameters
+        selected_year = self.request.GET.get('year', current_year)
+        selected_month = self.request.GET.get('month', current_month)
+
+        # Convert to integers
+        try:
+            selected_year = int(selected_year)
+            selected_month = int(selected_month)
+        except ValueError:
+            selected_year = current_year
+            selected_month = current_month
+
+
+        # Filter the queryset based on the selected year and month
+        # filtered_survey = Answer.objects.filter(
+        #     created_at__year=selected_year,
+        #     created_at__month=selected_month
+        # )
+        survey = self.get_object()
+        summary = SummaryResponse(survey=survey,
+                                  selected_year=selected_year,
+                                  selected_month=selected_month)
+
+        # Generate year and month ranges for the form
+        year_range = range(2023, current_year + 1)
+        month_range = [
+            {'value': 1, 'name': 'Yanvar'},
+            {'value': 2, 'name': 'Fevral'},
+            {'value': 3, 'name': 'Mart'},
+            {'value': 4, 'name': 'Aprel'},
+            {'value': 5, 'name': 'May'},
+            {'value': 6, 'name': 'Iyun'},
+            {'value': 7, 'name': 'Iyul'},
+            {'value': 8, 'name': 'Avgust'},
+            {'value': 9, 'name': 'Sentabr'},
+            {'value': 10, 'name': 'Oktabr'},
+            {'value': 11, 'name': 'Noyabr'},
+            {'value': 12, 'name': 'Dekabr'}
+        ]
+
+        context.update({
+            'summary': summary,
+            'year_range': year_range,
+            'month_range': month_range,
+            'selected_year': selected_year,
+            'selected_month': selected_month,
+        })
+
         return context

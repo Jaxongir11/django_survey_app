@@ -175,8 +175,10 @@ class ChartBarRating(ChartBar):
 
 class SummaryResponse:
 
-    def __init__(self, survey: Survey):
+    def __init__(self, survey: Survey, selected_year: int, selected_month: int):
         self.survey = survey
+        self.selected_year = selected_year
+        self.selected_month = selected_month
 
     def _process_radio_type(self, question: Question) -> str:
         pie_chart = ChartPie(chart_id=f"chartpie_{question.id}", chart_name=question.label)
@@ -185,7 +187,9 @@ class SummaryResponse:
         data = []
         for label in labels:
             clean_label = label.strip().replace(' ', '_').lower()
-            count = Answer.objects.filter(question=question, value=clean_label).count()
+            count = Answer.objects.filter(question=question, value=clean_label,
+                                          created_at__year=self.selected_year,
+                                          created_at__month=self.selected_month).count()
             data.append(count)
 
         pie_chart.labels = labels
@@ -202,15 +206,20 @@ class SummaryResponse:
 
         data = []
         for label in labels:
-            count = Answer.objects.filter(question=question, value=label).count()
+            count = Answer.objects.filter(question=question, value=label,
+                                          created_at__year=self.selected_year,
+                                          created_at__month=self.selected_month).count()
             data.append(count)
 
-        values_rating = Answer.objects.filter(question=question).values_list('value', flat=True)
+        values_rating = Answer.objects.filter(question=question,
+                                              created_at__year=self.selected_year,
+                                              created_at__month=self.selected_month).values_list('value', flat=True)
         values_convert = [int(v) for v in values_rating]
         try:
             rating_avg = round(sum(values_convert) / len(values_convert), 1)
         except ZeroDivisionError:
             rating_avg = 0
+
 
         bar_chart.labels = labels
         bar_chart.data = data

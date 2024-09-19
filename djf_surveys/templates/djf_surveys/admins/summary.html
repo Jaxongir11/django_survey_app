@@ -30,6 +30,25 @@
             </div>
         </section>
 
+        <form method="GET">
+            <label for="year">Yil:</label>
+            <select id="year" name="year">
+                {% for year in year_range %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="month">Oy:</label>
+            <select id="month" name="month">
+                {% for m in month_range %}
+                    <option value="{{ m.value }}" {% if m.value == selected_month %}selected{% endif %}>{{ m.name }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Natija</button>
+        </form>
+
+
         <div class="grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {{ summary.generate|safe }}
         </div>
