@@ -45,6 +45,13 @@ class BaseModel(models.Model):
         abstract = True
 
 
+class Direction(models.Model):
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
+
+
 class Survey(BaseModel):
     name = models.CharField(_("name"), max_length=200)
     description = models.TextField(_("description"), default='')
@@ -140,6 +147,7 @@ class Question(BaseModel):
 class UserAnswer(BaseModel):
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, verbose_name=_("survey"))
     user = models.ForeignKey(get_user_model(), blank=True, null=True, on_delete=models.CASCADE, verbose_name=_("user"))
+    direction = models.ForeignKey(Direction, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = _("user answer")

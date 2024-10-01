@@ -30,21 +30,35 @@
             </div>
         </section>
 
-        <form method="GET">
-            <label for="year">Yil:</label>
+        <form method="GET" action="">
+            <label for="direction">Kursni tanlang:</label>
+            <select name="direction" id="direction">
+                <option value="">Kurslar</option>
+                {% for direction in directions %}
+                    <option value="{{ direction.id }}" {% if direction.id == selected_direction.id %}selected{% endif %}>
+                        {{ direction.name }}
+                    </option>
+                {% endfor %}
+            </select>
+            <label for="year">Yilni tanlang:</label>
             <select id="year" name="year">
-                {% for year in year_range %}
-                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                <option value="">Yillar</option>
+                {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                        {{ year }}
+                    </option>
                 {% endfor %}
             </select>
 
-            <label for="month">Oy:</label>
+            <label for="month">Oyni tanlang:</label>
             <select id="month" name="month">
-                {% for m in month_range %}
-                    <option value="{{ m.value }}" {% if m.value == selected_month %}selected{% endif %}>{{ m.name }}</option>
+                <option value="">Oylar</option>
+                {% for month in months %}
+                    <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                        {{ month.name}}
+                    </option>
                 {% endfor %}
             </select>
-
             <button type="submit">Natija</button>
         </form>
 

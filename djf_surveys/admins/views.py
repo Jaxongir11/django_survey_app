@@ -16,7 +16,7 @@ from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
-from djf_surveys.models import Survey, Question, UserAnswer, Answer
+from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys.views import SurveyListView
 from djf_surveys.forms import BaseSurveyForm
@@ -215,36 +215,58 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get current year and month
         current_year = now().year
-        current_month = now().month
-
-        # Get the selected year and month from the request parameters
-        selected_year = self.request.GET.get('year', current_year)
-        selected_month = self.request.GET.get('month', current_month)
-
-        # Convert to integers
+        selected_year = self.request.GET.get('year', None)
         try:
-            selected_year = int(selected_year)
-            selected_month = int(selected_month)
+            selected_year = int(selected_year) if selected_year else None
         except ValueError:
-            selected_year = current_year
-            selected_month = current_month
+            selected_year = None
 
+        selected_month = self.request.GET.get('month', None)
+        if selected_month and selected_month.isdigit():
+            selected_month = int(selected_month)
+        else:
+            selected_month = None
 
-        # Filter the queryset based on the selected year and month
-        # filtered_survey = Answer.objects.filter(
-        #     created_at__year=selected_year,
-        #     created_at__month=selected_month
-        # )
+        selected_direction_id = self.request.GET.get('direction')
+        print(f"Request GET parameters: {self.request.GET}")
+        # Convert to integers
+        if selected_direction_id == '':
+            print("Direction ID is None. It may not be provided in the request.")
+        else:
+            print(f"Direction ID: {selected_direction_id}")
+
+        selected_direction = None
+        if selected_direction_id:
+            try:
+                selected_direction = Direction.objects.get(id=selected_direction_id)
+            except Direction.DoesNotExist:
+                selected_direction = None
+        else:
+            selected_direction = None
+
+        directions = Direction.objects.all()
+
+        answer_queryset = Answer.objects.all()
+
+        if selected_year:
+            answer_queryset = answer_queryset.filter(created_at__year=selected_year)
+
+        if selected_month:
+            answer_queryset = answer_queryset.filter(created_at__month=selected_month)
+
+        if selected_direction:
+            answer_queryset = answer_queryset.filter(user_answer__direction=selected_direction)
+
         survey = self.get_object()
         summary = SummaryResponse(survey=survey,
-                                  selected_year=selected_year,
-                                  selected_month=selected_month)
+                                  selected_year=selected_year if selected_year else None,
+                                  selected_month=selected_month if selected_month else None,
+                                  selected_direction=selected_direction if selected_direction else None)
 
         # Generate year and month ranges for the form
-        year_range = range(2023, current_year + 1)
-        month_range = [
+        years = range(2023, current_year + 1)
+        months = [
             {'value': 1, 'name': 'Yanvar'},
             {'value': 2, 'name': 'Fevral'},
             {'value': 3, 'name': 'Mart'},
@@ -261,10 +283,11 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
 
         context.update({
             'summary': summary,
-            'year_range': year_range,
-            'month_range': month_range,
+            'years': years,
             'selected_year': selected_year,
+            'months': months,
             'selected_month': selected_month,
+            'directions': directions,
+            'selected_direction': selected_direction,
         })
-
         return context

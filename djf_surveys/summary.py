@@ -3,7 +3,7 @@ import random
 from django.utils.translation import gettext
 
 from djf_surveys import models
-from djf_surveys.models import TYPE_FIELD, Survey, Question, Answer
+from djf_surveys.models import TYPE_FIELD, Survey, Question, Answer, Direction
 from djf_surveys.utils import create_star
 
 COLORS = [
@@ -175,10 +175,24 @@ class ChartBarRating(ChartBar):
 
 class SummaryResponse:
 
-    def __init__(self, survey: Survey, selected_year: int, selected_month: int):
+    def __init__(self, survey: Survey, selected_year: int, selected_month: int, selected_direction: Direction):
         self.survey = survey
         self.selected_year = selected_year
         self.selected_month = selected_month
+        self.selected_direction = selected_direction
+
+    def get_filtered_queryset(self, queryset):
+        # Agar selected_month yoki selected_direction tanlanmagan bo'lsa, ularga filtr qo'llanmaydi.
+        if self.selected_year is not None:
+            queryset = queryset.filter(created_at__year=self.selected_year)
+
+        if self.selected_month is not None:
+            queryset = queryset.filter(created_at__month=self.selected_month)
+
+        if self.selected_direction is not None:
+            queryset = queryset.filter(user_answer__direction=self.selected_direction)
+
+        return queryset
 
     def _process_radio_type(self, question: Question) -> str:
         pie_chart = ChartPie(chart_id=f"chartpie_{question.id}", chart_name=question.label)
@@ -187,9 +201,9 @@ class SummaryResponse:
         data = []
         for label in labels:
             clean_label = label.strip().replace(' ', '_').lower()
-            count = Answer.objects.filter(question=question, value=clean_label,
-                                          created_at__year=self.selected_year,
-                                          created_at__month=self.selected_month).count()
+            queryset = Answer.objects.filter(question=question, value=clean_label)
+            queryset = self.get_filtered_queryset(queryset)
+            count = queryset.count()
             data.append(count)
 
         pie_chart.labels = labels
@@ -206,20 +220,20 @@ class SummaryResponse:
 
         data = []
         for label in labels:
-            count = Answer.objects.filter(question=question, value=label,
-                                          created_at__year=self.selected_year,
-                                          created_at__month=self.selected_month).count()
+            queryset = Answer.objects.filter(question=question, value=label)
+            queryset = self.get_filtered_queryset(queryset)  # Filtrni qo'llash
+            count = queryset.count()
             data.append(count)
 
-        values_rating = Answer.objects.filter(question=question,
-                                              created_at__year=self.selected_year,
-                                              created_at__month=self.selected_month).values_list('value', flat=True)
+        queryset = Answer.objects.filter(question=question)
+        queryset = self.get_filtered_queryset(queryset)  # Filtrni qo'llash
+        values_rating = queryset.values_list('value', flat=True)
+
         values_convert = [int(v) for v in values_rating]
         try:
             rating_avg = round(sum(values_convert) / len(values_convert), 1)
         except ZeroDivisionError:
             rating_avg = 0
-
 
         bar_chart.labels = labels
         bar_chart.data = data
@@ -230,9 +244,10 @@ class SummaryResponse:
         bar_chart = ChartBar(chart_id=f"barchart_{question.id}", chart_name=question.label)
         labels = question.choices.split(",")
 
-        str_value = []
-        for answer in Answer.objects.filter(question=question):
-            str_value.append(answer.value)
+        queryset = Answer.objects.filter(question=question)
+        queryset = self.get_filtered_queryset(queryset)  # Filtrni qo'llash
+        str_value = [answer.value for answer in queryset]
+
         all_value = ",".join(str_value)
         data_value = all_value.split(",")
 

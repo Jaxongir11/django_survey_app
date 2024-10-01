@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Survey, Question, Answer, UserAnswer
+from .models import Survey, Question, Answer, UserAnswer, Direction
+
+
+@admin.register(Direction)
+class DirectionAdmin(admin.ModelAdmin):
+    list_display = ('name',)  # This will show the 'name' field in the list view.
+    search_fields = ('name',)
 
 
 class AdminQuestion(admin.ModelAdmin):

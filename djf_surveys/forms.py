@@ -6,7 +6,7 @@ from django.core.mail import send_mail, BadHeaderError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.utils.translation import gettext_lazy as _
 
-from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question
+from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question, Direction
 from djf_surveys.widgets import CheckboxSelectMultipleSurvey, RadioSelectSurvey, DateSurvey, RatingSurvey
 from djf_surveys.app_settings import DATE_INPUT_FORMAT, SURVEY_FIELD_VALIDATORS, SURVEY_EMAIL_FROM
 from djf_surveys.validators import RatingValidator
@@ -112,13 +112,29 @@ class BaseSurveyForm(forms.Form):
 
 
 class CreateSurveyForm(BaseSurveyForm):
+    direction = forms.ModelChoiceField(
+        queryset=Direction.objects.all(),
+        required=True,
+        label='O‘qiyotgan kursingizni tanlang:',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add the field_of_study to the list of fields
+        self.fields['direction'] = forms.ModelChoiceField(
+            queryset=Direction.objects.all(),
+            required=True,
+            label="O‘qiyotgan kursingizni tanlang:"
+        )
 
     @transaction.atomic
     def save(self):
         cleaned_data = super().clean()
 
         user_answer = UserAnswer.objects.create(
-            survey=self.survey, user=self.user
+            survey=self.survey, user=self.user,
+            direction=cleaned_data.get('direction')
         )
         for question in self.questions:
             field_name = f'field_survey_{question.id}'
