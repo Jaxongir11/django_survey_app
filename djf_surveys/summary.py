@@ -38,7 +38,7 @@ class ChartJS:
 <div class="swiper-slide">
     <blockquote class="p-6 border border-gray-100 rounded-lg shadow-lg bg-white">
       <canvas id="{self.chart_id}" width="{self.width}" height="{self.height}"></canvas>
-    </blocquote>
+    </blockquote>
 </div>
 """
 
@@ -165,10 +165,10 @@ class ChartBarRating(ChartBar):
           <div class="flex justify-center">
               {stars}
           </div>
-          <h5 class="mb-0 mt-1 text-sm"> Rate Average</h5>
+          <h5 class="mb-0 mt-1 text-sm"> O‘rtacha qiymat</h5>
       </div>
       <canvas id="{self.chart_id}" width="{self.width}" height="{self.height}"></canvas>
-    </blocquote>
+    </blockquote>
 </div>
 """
 
@@ -210,7 +210,7 @@ class SummaryResponse:
         pie_chart.data = data
         return pie_chart.render()
 
-    def _process_rating_type(self, question: Question):
+    def _process_rating_type(self, question: Question) -> str:
         if not question.choices:  # use 5 as default for backward compatibility
             question.choices = 5
 

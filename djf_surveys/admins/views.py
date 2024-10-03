@@ -186,11 +186,14 @@ class DownloadResponseSurveyView(DetailView):
         header = []
         for index, user_answer in enumerate(user_answers):
             if index == 0:
-                header.append('user')
-                header.append('update_at')
+                header.append('foydalanuvchi')
+                header.append('yuborilgan vaqti')
+                header.append('kurs nomi')
 
-            rows.append(user_answer.user.username if user_answer.user else 'no auth')
+            rows.append(user_answer.user.username if user_answer.user else 'ro‘yxatdan o‘tmagan')
             rows.append(user_answer.updated_at.strftime("%Y-%m-%d %H:%M:%S"))
+            rows.append(user_answer.direction.name if user_answer.direction else 'yo‘nalish tanlanmagan')
+
             for answer in user_answer.answer_set.all():
                 if index == 0:
                     header.append(answer.question.label)
