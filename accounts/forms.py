@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from .models import Profile, Position
+from .models import Profile, Position, Department
 
 
 class UserRegisterForm(UserCreationForm):
@@ -51,6 +51,17 @@ class UserUpdateForm(forms.ModelForm):
 
 
 class ProfileUpdateForm(forms.ModelForm):
+    departments = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.all(),
+        widget=forms.CheckboxSelectMultiple,  # Optional: Use a suitable widget
+        required=False
+    )
+    positions = forms.ModelMultipleChoiceField(
+        queryset=Position.objects.all(),
+        widget=forms.CheckboxSelectMultiple,  # Optional: Use a suitable widget
+        required=False
+    )
+
     image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
     phone_number = forms.RegexField(
         regex=r'^\+?1?\d{9,15}$',
@@ -67,18 +78,5 @@ class ProfileUpdateForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ['department', 'position', 'rank', 'gender', 'birthday', 'phone_number', 'image']
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['position'].queryset = Position.objects.none()
-
-        if 'department' in self.data:
-            try:
-                department_id = int(self.data.get('department'))
-                self.fields['position'].queryset = Position.objects.filter(department_id=department_id).order_by('name')
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk:
-            self.fields['position'].queryset = self.instance.department.positions.order_by('name')
+        fields = ['departments', 'positions', 'rank', 'gender', 'birthday', 'phone_number', 'image', 'can_be_rated']
 

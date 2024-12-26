@@ -1,43 +1,35 @@
 from django.contrib import admin
-from .models import Department, Position, Profile, Rank
+from .models import Department, Position, Profile, ProfileDepartmentPosition
 
 
 class DepartmentAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+    list_display = ("name", "slug")
+    prepopulated_fields = {"slug": ("name",)}  # slug avtomatik to'ldiriladi
+
+
+class PositionAdmin(admin.ModelAdmin):
+    list_display = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
 
 
-class PositiontAdmin(admin.ModelAdmin):
-    list_display = ("name",)
-    prepopulated_fields = {"slug": ("name",)}
-
-
-class RankAdmin(admin.ModelAdmin):
-    list_display = ("name",)
+class ProfileDepartmentPositionInline(admin.TabularInline):
+    model = ProfileDepartmentPosition
+    extra = 1
 
 
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['get_username', 'get_first_name', 'get_last_name']
+    list_display = ['user', 'list_departments_positions']
+    inlines = [ProfileDepartmentPositionInline]
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "position":
-            kwargs["queryset"] = Position.objects.filter(department_id=1)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    def list_departments_positions(self, obj):
+        # Profilega bog'langan barcha department va positionlar ro'yxatini qaytaradi
+        return ", ".join([
+            f"{relation.department.name} - {relation.position.name}"
+            for relation in ProfileDepartmentPosition.objects.filter(profile=obj)
+        ])
+    list_departments_positions.short_description = "Departments & Positions"
 
-    def get_username(self, obj):
-        return obj.user.username
 
-    def get_first_name(self, obj):
-        return obj.user.first_name
-
-    def get_last_name(self, obj):
-        return obj.user.last_name
-
-    get_username.short_description = 'Username'
-    get_first_name.short_description = 'First Name'
-    get_last_name.short_description = 'Last Name'
-
-admin.site.register(Profile, ProfileAdmin)
 admin.site.register(Department, DepartmentAdmin)
-admin.site.register(Position, PositiontAdmin)
-admin.site.register(Rank, RankAdmin)
+admin.site.register(Position, PositionAdmin)
+admin.site.register(Profile, ProfileAdmin)

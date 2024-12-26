@@ -1,3 +1,4 @@
+
 .rating__star {
     cursor: pointer;
 }
@@ -17,3 +18,4 @@
     background-repeat: no-repeat;
     background-image: url("../images/star-border.png");
 }
+

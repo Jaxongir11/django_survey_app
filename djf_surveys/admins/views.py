@@ -1,6 +1,5 @@
 import csv
 from io import StringIO
-
 from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views.generic.edit import CreateView, UpdateView
@@ -14,9 +13,9 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import View
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
-
+from django.db.models import Avg
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
-from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction
+from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction, Question2, UserRating, Answer2
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys.views import SurveyListView
 from djf_surveys.forms import BaseSurveyForm
@@ -217,6 +216,7 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        survey = self.get_object()
 
         current_year = now().year
         selected_year = self.request.GET.get('year', None)
@@ -232,12 +232,12 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
             selected_month = None
 
         selected_direction_id = self.request.GET.get('direction')
-        print(f"Request GET parameters: {self.request.GET}")
+        print(f"GET so‘rov parametrlari: {self.request.GET}")
         # Convert to integers
         if selected_direction_id == '':
-            print("Direction ID is None. It may not be provided in the request.")
+            print("Yo‘nalish IDsi mavjud emas. U so‘rovda ko‘rsatilmagan bo‘lishi mumkin.")
         else:
-            print(f"Direction ID: {selected_direction_id}")
+            print(f"Yo‘nalish ID: {selected_direction_id}")
 
         selected_direction = None
         if selected_direction_id:
@@ -261,7 +261,17 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
         if selected_direction:
             answer_queryset = answer_queryset.filter(user_answer__direction=selected_direction)
 
-        survey = self.get_object()
+        rated_users = (
+            UserRating.objects
+                .filter(user_answer__survey=survey)  # ayni shu survey'ga tegishli reytinglar
+                .values(
+                "rated_user__first_name",
+                "rated_user__last_name",
+            )
+                .annotate(avg_rating=Avg("answer2__value"))  # O'rtacha reyting
+                .order_by("-avg_rating")  # Eng balanddan eng pastga
+        )
+
         summary = SummaryResponse(survey=survey,
                                   selected_year=selected_year if selected_year else None,
                                   selected_month=selected_month if selected_month else None,
@@ -292,5 +302,6 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
             'selected_month': selected_month,
             'directions': directions,
             'selected_direction': selected_direction,
+            'rated_users': rated_users,
         })
         return context

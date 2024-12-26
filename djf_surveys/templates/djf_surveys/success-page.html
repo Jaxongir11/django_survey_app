@@ -14,19 +14,19 @@
                     </svg>
             </div>
             <h1 class="text-3xl pb-6 font-medium">
-               {% trans 'Thank you for completing this survey' %}
+               {% trans "Ushbu so‘rovnomani to‘ldirganingiz uchun tashakkur" %}
             </h1>
             <p class="mt-4 text-sm text-gray-500">
                 {% if object.success_page_content %}
                     {{ object.success_page_content|safe }}
                 {% else %}
-                    {% trans "I really appreciate your effort and the time you devoted to filling the questionnaire. Your answers will help us." %}
+                    {% trans "Sizning sa'y-harakatlaringiz va so'rovnomani to'ldirishga ajratgan vaqtingizni juda qadrlaymiz. Sizning javoblaringiz bizga yordam beradi." %}
                 {% endif %}
             </p>
 
             <div class="flex justify-center py-6">
                 <a href="{{ link_back_on_success_page }}" class="block mt-5 px-5 py-3 text-sm font-medium text-white bg-blue-500 rounded-lg">
-                    {% trans "Back" %}
+                    {% trans "Ortga" %}
                 </a>
             </div>
         </div>

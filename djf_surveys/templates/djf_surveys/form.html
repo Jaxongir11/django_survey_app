@@ -4,38 +4,67 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'djf_surveys/te-starter/css/tw-elements.min.css' %}">
     <link rel="stylesheet" href="{% static 'djf_surveys/css/rating.css' %}"/>
+    <style> .big-star { font-size: 300%; /* Yulduzcha o‘lchamini ikki barobar oshiradi */ } </style>
 {% endblock %}
 
 {% block content %}
     <div class="max-w-screen-xl px-4 py-16 mx-auto sm:px-6 lg:px-8">
-        <div class="max-w-lg mx-auto">
+        <div class="max-w mx-auto">
             <h1 class="text-2xl font-bold text-center text-blue-500 sm:text-3xl">{{ title_page }}</h1>
-
             <p class="max-w-md mx-auto mt-4 text-center text-gray-500">
                 {{ sub_title_page }}
             </p>
 
             <form method="post">
                 {% csrf_token %}
+
+                <h2 class="text-xl font-semibold mt-6">Umumiy savollar</h2>
+
                 {% for field in form %}
                     <div class="p-8 mt-6 mb-0 space-y-4 rounded-lg shadow-md border border-gray-200 bg-white">
-                        <label for="email" class="text-base font-medium">{{ field.label }}</label>
-
+                        <label for="email" class="text-xl font-medium">{{ field.label }}</label>
                         <div class="mt-1">
                             {% if field.field.widget.input_type == 'radio' or field.field.widget.input_type == 'checkbox' %}
                                 {{ field }}
                             {% else %}
-                                {{ field|addclass:'w-full p-4 pr-12 text-sm border-gray-500 rounded-lg shadow-sm' }}
+                                {{ field|addclass:'w-full p-4 pr-12 text-lg border-gray-500 rounded-lg shadow-sm' }}
                             {% endif %}
                         </div>
                         <p class="text-xs text-gray-400">{{ field.help_text }}</p>
                         <span class="text-xs text-red-400">{{ field.errors }}</span>
                     </div>
-
                 {% endfor %}
 
-                <button type="submit" class="block w-full mt-5 px-5 py-3 text-sm font-medium text-white bg-blue-500 rounded-lg">
-                    {% trans "Submit" %}
+                <h2 class="text-xl font-semibold mt-6">O'qituvchilarni baholang</h2>
+                {% for user in eligible_users %}
+                    <div class="user-profile p-4 mt-2 mb-0 rounded-lg shadow-md border border-gray-200 bg-white flex">
+                        <div class="user-info flex-[1] flex flex-col items-center">
+                        <img src="{{ user.image.url }}" alt="Profil rasmi" class="mb-2 w-40 h-40 rounded-full">
+                        <h3 class="text-xl font-bold">{{ user.rank }}</h3>
+                        <h3 class="text-xl font-bold">{{ user.user.get_full_name }}</h3>
+                        <h3 class="text-xl">{{ user.department.name }} {{ user.position.name }}</h3>
+                        </div>
+
+                        <div class="questions flex-[3] ml-4">
+                        {% for question in questions2 %}
+                            <div class="question mb-3">
+                                <label class="block text-xl font-medium">{{ question.label }}</label>
+                                <div class="rating">
+                                    {% for i in "12345" %}
+                                        <input type="radio" id="rating-{{ user.id }}-{{ question.id }}-{{ i }}" name="rating_{{ user.id }}_{{ question.id }}" value="{{ i }}" class="hidden"/>
+                                        <label for="rating-{{ user.id }}-{{ question.id }}-{{ i }}" class="inline-block cursor-pointer text-gray-400 hover:text-yellow-500 big-star">
+                                            ★
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="block w-full mt-5 px-5 py-3 text-xl font-medium text-white bg-blue-500 rounded-lg">
+                    {% trans "Yuborish" %}
                 </button>
             </form>
         </div>
@@ -45,4 +74,17 @@
 
 {% block extra_js %}
     <script src="{% static 'djf_surveys/te-starter/js/tw-elements.umd.min.js' %}"></script>
+    <script>
+        document.querySelectorAll('.rating input').forEach((input) => {
+            input.addEventListener('change', function() {
+                const name = this.name;
+                const value = this.value;
+
+                document.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+                    el.nextElementSibling.classList.toggle('text-yellow-500', el.value <= value);
+                    el.nextElementSibling.classList.toggle('text-gray-400', el.value > value);
+                });
+            });
+        });
+    </script>
 {% endblock %}

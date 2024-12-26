@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
@@ -39,7 +38,6 @@ class CustomLogoutView(LogoutView):
         elif request.method == 'POST':
             # Perform any additional logic needed for POST request
             return super().post(request, *args, **kwargs)
-
 
 
 class RegisterView(View):

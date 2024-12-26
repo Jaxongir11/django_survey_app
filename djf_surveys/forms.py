@@ -1,12 +1,13 @@
 from typing import List, Tuple
-
 from django import forms
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.core.mail import send_mail, BadHeaderError
 from django.core.validators import MaxLengthValidator, MinLengthValidator
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-
-from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question, Direction
+from accounts.models import Profile
+from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question, Direction, Question2, UserAnswer2, UserRating, \
+    Answer2
 from djf_surveys.widgets import CheckboxSelectMultipleSurvey, RadioSelectSurvey, DateSurvey, RatingSurvey
 from djf_surveys.app_settings import DATE_INPUT_FORMAT, SURVEY_FIELD_VALIDATORS, SURVEY_EMAIL_FROM
 from djf_surveys.validators import RatingValidator
@@ -115,52 +116,70 @@ class CreateSurveyForm(BaseSurveyForm):
     direction = forms.ModelChoiceField(
         queryset=Direction.objects.all(),
         required=True,
-        label='O‘qiyotgan kursingizni tanlang:',
+        label="O'qiyotgan kursingizni tanlang:",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Add the field_of_study to the list of fields
-        self.fields['direction'] = forms.ModelChoiceField(
-            queryset=Direction.objects.all(),
-            required=True,
-            label="O‘qiyotgan kursingizni tanlang:"
-        )
+    def __init__(self, survey, user, *args, **kwargs):
+        self.survey = survey
+        self.user = user
+        super().__init__(survey=survey, user=user, *args, **kwargs)
 
     @transaction.atomic
     def save(self):
         cleaned_data = super().clean()
 
+        # UserAnswer va UserAnswer2 ni saqlash
         user_answer = UserAnswer.objects.create(
             survey=self.survey, user=self.user,
             direction=cleaned_data.get('direction')
         )
+        user_answer2 = UserAnswer2.objects.create(
+            survey=self.survey, user=self.user,
+            direction=cleaned_data.get('direction')
+        )
+
+        # Umumiy savollarni saqlash
         for question in self.questions:
             field_name = f'field_survey_{question.id}'
-
             if question.type_field == TYPE_FIELD.multi_select:
                 value = ",".join(cleaned_data[field_name])
             else:
                 value = cleaned_data[field_name]
-
             Answer.objects.create(
                 question=question, value=value, user_answer=user_answer
             )
 
-        if self.survey.notification_to and SURVEY_EMAIL_FROM:
-            try:
-                user_answer_count = UserAnswer.objects.filter(survey=self.survey).count()
-                send_mail(
-                    _('Notification {survey_name}').format(survey_name=self.survey.name),
-                    _('You have received one new response. '
-                      'The total number of responses is currently {count}').format(count=user_answer_count),
-                    SURVEY_EMAIL_FROM,
-                    self.survey.notification_to.split(","),
-                    fail_silently=False,
-                )
-            except (BadHeaderError, ConnectionError) as e:
-                print(e)
+        for key, val in self.data.items():
+            print("KEY=", key, " VAL=", val)
+
+        # Reyting savollarni saqlash
+        for key, val in self.data.items():
+            if key.startswith("rating_") and len(key.split("_")) == 3:
+                _, profile_id_str, question_id_str = key.split("_")
+                try:
+                    rating_value = int(val)
+                    profile_id = int(profile_id_str)
+                    question_id = int(question_id_str)
+
+                    question = get_object_or_404(Question2, id=question_id)
+                    profile_obj = Profile.objects.get(id=profile_id)
+
+                    # Chunki model 'UserRating.rated_user' -> ForeignKey(User)
+                    user_rating = UserRating.objects.create(
+                        user_answer=user_answer2,
+                        rated_user=profile_obj.user  # <-- .user bilan User obyektini oldik
+                    )
+                    Answer2.objects.create(
+                        question=question,
+                        value=rating_value,
+                        user_rating=user_rating
+                    )
+                except (ObjectDoesNotExist, ValueError) as e:
+                    print("Xatolik:", e)
+                    continue  # Noto‘g‘ri ma’lumotlarni o‘tkazib yuboring
+
+        return user_answer
 
 
 class EditSurveyForm(BaseSurveyForm):
@@ -181,26 +200,3 @@ class EditSurveyForm(BaseSurveyForm):
             else:
                 self.fields[field_name].initial = answer.value
 
-    @transaction.atomic
-    def save(self):
-        cleaned_data = super().clean()
-        self.user_answer.survey = self.survey
-        self.user_answer.user = self.user
-        self.user_answer.save()
-
-        for question in self.questions:
-            field_name = f'field_survey_{question.id}'
-
-            if question.type_field == TYPE_FIELD.multi_select:
-                value = ",".join(cleaned_data[field_name])
-            else:
-                value = cleaned_data[field_name]
-
-            answer, created = Answer.objects.get_or_create(
-                question=question, user_answer=self.user_answer,
-                defaults={'question_id': question.id, 'user_answer_id': self.user_answer.id}
-            )
-
-            if not created and answer:
-                answer.value = value
-                answer.save()

@@ -1,18 +1,32 @@
 import random
-
 from django.utils.translation import gettext
-
+from django.db.models import Avg
 from djf_surveys import models
-from djf_surveys.models import TYPE_FIELD, Survey, Question, Answer, Direction
+from djf_surveys.models import TYPE_FIELD, Survey, Question, Answer, Direction, Question2, Answer2, UserRating, UserAnswer2
 from djf_surveys.utils import create_star
 
-COLORS = [
-    '#64748b', '#a1a1aa', '#374151', '#78716c', '#d6d3d1', '#fca5a5', '#ef4444', '#7f1d1d',
-    '#fb923c', '#c2410c', '#fcd34d', '#b45309', '#fde047', '#bef264', '#ca8a04', '#65a30d',
-    '#86efac', '#15803d', '#059669', '#a7f3d0', '#14b8a6', '#06b6d4', '#155e75', '#0ea5e9',
-    '#075985', '#3b82f6', '#1e3a8a', '#818cf8', '#a78bfa', '#a855f7', '#6b21a8', '#c026d3',
-    '#db2777', '#fda4af', '#e11d48', '#9f1239'
-]
+
+COLORS = ['#ff80ed', '#065535', '#133337', '#ffc0cb',
+          '#008080', '#ff0000', '#ffd700', '#00ffff',
+          '#ffa500', '#0000ff', '#c6e2ff', '#40e0d0',
+          '#ff7373', '#666666', '#bada55', '#003366',
+          '#fa8072', '#ffb6c1', '#ffff00', '#c0c0c0',
+          '#800000', '#800080', '#00ff00', '#7fffd4',
+          '#20b2aa', '#f08080', '#cccccc', '#333333',
+          '#66cdaa', '#ff00ff', '#ff7f50', '#ff6666',
+          '#468499', '#008000', '#00ced1', '#000080',
+          '#660066', '#990000', '#f6546a', '#8a2be2',
+          '#0e2f44', '#6897bb', '#088da5', '#ccff00',
+          '#ff1493', '#ffff66', '#81d8d0', '#ff4040',
+          '#2acaea', '#0a75ad', '#420420', '#00ff7f']
+# for _ in range(100):
+#     # Rangi tasodifiy generatsiya (0..255 intervaldagi 3 kanal).
+#     r = random.randint(0, 255)
+#     g = random.randint(0, 255)
+#     b = random.randint(0, 255)
+#     # #RRGGBB formatga aylantirish
+#     color_hex = f'#{r:02x}{g:02x}{b:02x}'
+#     COLORS.append(color_hex)
 
 
 class ChartJS:
@@ -260,8 +274,118 @@ class SummaryResponse:
         bar_chart.data = data
         return bar_chart.render()
 
-    def generate(self):
+    def get_filtered_userrating(self, question2: Question2):
+        qs = UserRating.objects.filter(
+            user_answer__survey=self.survey
+        )
+
+        if self.selected_year is not None:
+            qs = qs.filter(user_answer__created_at__year=self.selected_year)
+        if self.selected_month is not None:
+            qs = qs.filter(user_answer__created_at__month=self.selected_month)
+        if self.selected_direction is not None:
+            qs = qs.filter(user_answer__direction=self.selected_direction)
+
+        # Shundan so‘ng question2 bo‘yicha ham cheklash
+        qs = qs.filter(answer2__question=question2)
+        return qs
+
+    def _process_question2_rating_apex(self, question2: Question2):
+        qs = self.get_filtered_userrating(question2)
+
+
+        # 2) rated_users ni o‘zga quramiz:
+        rated_users = (
+            qs.values("rated_user__first_name", "rated_user__last_name")
+                .annotate(avg_rating=Avg("answer2__value"))
+                .order_by("-avg_rating")
+        )
+
+        n_users = len(rated_users)  # baholangan userlar soni
+        if n_users <= 5:
+            column_width = "40%"
+        elif n_users <= 10:
+            column_width = "20%"
+        elif n_users <= 20:
+            column_width = "15%"
+        elif n_users <= 40:
+            column_width = "10%"
+        elif n_users <= 80:
+            column_width = "5%"
+        else:
+            column_width = "3%"
+
+        categories = []
+        data_series = []
+
+        for user in rated_users:
+            first_name = user["rated_user__first_name"] or ""
+            last_name = user["rated_user__last_name"] or ""
+            full_name = f"{last_name} {first_name}".strip()
+            avg_rating = user["avg_rating"] or 0
+
+            categories.append(full_name)
+            data_series.append(round(avg_rating, 2))
+
+        # rang massivni JavaScript formatga keltirish
+
+        snippet = f"""
+    <div class="mt-8">
+      <h2 class="text-xl font-bold mb-4">{question2.label}</h2>
+      <div id="apexchart_q2_{question2.id}" style="height: 400px;"></div>
+    </div>
+    <script>
+    var options_q2_{question2.id} = {{
+      series: [{{
+        data: {data_series}
+      }}],
+      chart: {{
+        type: 'bar',
+        height: 400
+      }},
+      colors: ['#003366'],
+      plotOptions: {{
+        bar: {{
+          columnWidth: '{column_width}',
+          dataLabels: {{
+            position: 'top'
+          }}
+        }}
+      }},
+      dataLabels: {{
+        enabled: true,
+        offsetY: -20,        // ustun tepasidan -20px balandda chiqsin
+        style: {{
+          colors: ['#000'],  // qora rang
+          fontSize: '12px'
+        }}
+      }},
+      xaxis: {{
+        categories: {categories},
+        labels: {{
+            rotate: -45,
+            rotateAlways: true,
+            style: {{ fontSize: '12px' }}
+        }}
+      }}
+    }};
+
+    var chart_q2_{question2.id} = new ApexCharts(
+      document.querySelector("#apexchart_q2_{question2.id}"),
+      options_q2_{question2.id}
+    );
+    chart_q2_{question2.id}.render();
+    </script>
+    """
+        return snippet
+
+    def generate_questions(self):
+        """
+        Faqat Question (model) savollarining natijalarini (radio, select, multi, rating)
+        qaytaradi, lekin Question2 emas.
+        """
         html_str = []
+
         for question in self.survey.questions.all():
             if question.type_field == TYPE_FIELD.radio or question.type_field == TYPE_FIELD.select:
                 html_str.append(self._process_radio_type(question))
@@ -269,16 +393,31 @@ class SummaryResponse:
                 html_str.append(self._process_multiselect_type(question))
             elif question.type_field == TYPE_FIELD.rating:
                 html_str.append(self._process_rating_type(question))
+
         if not html_str:
             input_types = ', '.join(str(x[1]) for x in models.Question.TYPE_FIELD if
                                     x[0] in (
-                                    models.TYPE_FIELD.radio, models.TYPE_FIELD.select, models.TYPE_FIELD.multi_select,
-                                    models.TYPE_FIELD.rating))
-            return """
-<div class="bg-yellow-100 space-y-1 py-5 rounded-md border border-yellow-200 text-center shadow-xs mb-2">
-    <h1 class="text-2xl font-semibold">{}</h1>
-    <h5 class="mb-0 mt-1 text-sm p-2">{}</h5>
-</div>
-""".format(gettext("No summary"), gettext("Summary is available only for input type: %ss") % input_types)
+                                        models.TYPE_FIELD.radio,
+                                        models.TYPE_FIELD.select,
+                                        models.TYPE_FIELD.multi_select,
+                                        models.TYPE_FIELD.rating
+                                    ))
+            return f"""
+        <div class="bg-yellow-100 space-y-1 py-5 rounded-md border border-yellow-200 text-center shadow-xs mb-2">
+            <h1 class="text-2xl font-semibold">{gettext("No summary")}</h1>
+            <h5 class="mb-0 mt-1 text-sm p-2">{gettext("Summary is available only for input type: %ss") % input_types}</h5>
+        </div>
+        """
+            # 3) Hamma to‘plangan HTML'ni join qilib qaytarish
+        return " ".join(html_str)
 
+    def generate_question2(self):
+        """
+        Faqat Question2 (model) savollarining natijalarini (reyting) qaytaradi,
+        ya'ni har bir question2 uchun ApexCharts.
+        """
+        html_str = []
+        for question2 in self.survey.questions2.all():
+            html_str.append(self._process_question2_rating_apex(question2))
+            # 3) Hamma to‘plangan HTML'ni join qilib qaytarish
         return " ".join(html_str)

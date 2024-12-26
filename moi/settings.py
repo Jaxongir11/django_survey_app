@@ -144,6 +144,6 @@ LOGOUT_REDIRECT_URL = LOGIN_URL
 # example override in settings.py
 # default value 12
 SURVEY_PAGINATION_NUMBER = {
-    'answer_list': 3,
+    'answer_list': 6,
     'survey_list': 2
 }
