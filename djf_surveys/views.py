@@ -16,7 +16,6 @@ from djf_surveys.forms import CreateSurveyForm, EditSurveyForm
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys import app_settings
 from djf_surveys.utils import NewPaginator
-from django.core.exceptions import ObjectDoesNotExist
 
 
 class SurveyListView(ContextTitleMixin, UserPassesTestMixin, ListView):
@@ -54,7 +53,7 @@ class SurveyFormView(FormMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['eligible_users'] = Profile.objects.filter(
-            positions__slug__in=['boshligi', 'professori', 'dotsenti', 'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'],
+            positions__slug__in=['boshligi', 'boshligi-orinbosari', 'professori', 'dotsenti', 'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'],
             can_be_rated=True
         ).distinct()
 

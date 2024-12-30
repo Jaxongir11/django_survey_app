@@ -2,6 +2,7 @@ import csv
 from io import StringIO
 from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _
+from django.views import View
 from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
@@ -14,6 +15,8 @@ from django.views.generic import View
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.db.models import Avg
+
+from accounts.models import Profile
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
 from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction, Question2, UserRating, Answer2
 from djf_surveys.mixin import ContextTitleMixin
@@ -27,7 +30,7 @@ from djf_surveys.admins.v2.forms import SurveyForm
 class AdminCrateSurveyView(ContextTitleMixin, CreateView):
     template_name = 'djf_surveys/admins/form.html'
     form_class = SurveyForm
-    title_page = _("Add New Survey")
+    title_page = _("Yangi so‘rovnoma qo‘shish")
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
@@ -45,7 +48,7 @@ class AdminEditSurveyView(ContextTitleMixin, UpdateView):
     model = Survey
     form_class = SurveyForm
     template_name = 'djf_surveys/admins/form.html'
-    title_page = _("Edit Survey")
+    title_page = _("So‘rovnomani tahrirlash")
 
     def get_success_url(self):
         survey = self.get_object()
@@ -63,6 +66,19 @@ class AdminSurveyFormView(ContextTitleMixin, FormMixin, DetailView):
     template_name = 'djf_surveys/admins/form_preview.html'
     form_class = BaseSurveyForm
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Existing context data...
+
+        # Add eligible_users to context
+        context['eligible_users'] = Profile.objects.filter(
+            positions__slug__in=[
+                'boshligi', 'boshligi-orinbosari', 'professori', 'dotsenti',
+                'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'
+            ]
+        ).distinct()
+        return context
+
     def get_form(self, form_class=None):
         if form_class is None:
             form_class = self.get_form_class()
@@ -74,6 +90,23 @@ class AdminSurveyFormView(ContextTitleMixin, FormMixin, DetailView):
     def get_sub_title_page(self):
         return self.object.description
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'POST':
+            return self.handle_ajax_request(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
+
+    def handle_ajax_request(self, request, *args, **kwargs):
+        user_id = request.POST.get('user_id')
+        can_be_rated = request.POST.get('can_be_rated') == 'true'
+
+        try:
+            profile = Profile.objects.get(id=user_id)
+            profile.can_be_rated = can_be_rated
+            profile.save()
+            return JsonResponse({'status': 'success', 'can_be_rated': profile.can_be_rated})
+        except Profile.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Foydalanuvchi topilmadi.'}, status=404)
+
 
 @method_decorator(staff_member_required, name='dispatch')
 class AdminDeleteSurveyView(DetailView):
@@ -82,7 +115,7 @@ class AdminDeleteSurveyView(DetailView):
     def get(self, request, *args, **kwargs):
         survey = self.get_object()
         survey.delete()
-        messages.success(request, gettext("Survey %ss succesfully deleted.") % survey.name)
+        messages.success(request, gettext("So‘rovnoma %ss muvaffaqiyatli o‘chirildi.") % survey.name)
         return redirect("djf_surveys:admin_survey")
 
 
@@ -95,7 +128,7 @@ class AdminCreateQuestionView(ContextTitleMixin, CreateView):
     template_name = 'djf_surveys/admins/question_form.html'
     success_url = reverse_lazy("djf_surveys:")
     fields = ['label', 'key', 'type_field', 'choices', 'help_text', 'required']
-    title_page = _("Add Question")
+    title_page = _("Savol qo‘shish")
     survey = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -108,7 +141,7 @@ class AdminCreateQuestionView(ContextTitleMixin, CreateView):
             question = form.save(commit=False)
             question.survey = self.survey
             question.save()
-            messages.success(self.request, gettext("%(page_action_name)s succeeded.") % dict(page_action_name=capfirst(self.title_page.lower())))
+            messages.success(self.request, gettext("%(page_action_name)s bajarildi.") % dict(page_action_name=capfirst(self.title_page.lower())))
             return self.form_valid(form)
         else:
             return self.form_invalid(form)
@@ -126,7 +159,7 @@ class AdminUpdateQuestionView(ContextTitleMixin, UpdateView):
     template_name = 'djf_surveys/admins/question_form.html'
     success_url = SURVEYS_ADMIN_BASE_PATH
     fields = ['label', 'key', 'type_field', 'choices', 'help_text', 'required']
-    title_page = _("Add Question")
+    title_page = _("Savol qo‘shish")
     survey = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -151,7 +184,7 @@ class AdminDeleteQuestionView(DetailView):
     def get(self, request, *args, **kwargs):
         question = self.get_object()
         question.delete()
-        messages.success(request, gettext("Question %ss succesfully deleted.") % question.label)
+        messages.success(request, gettext("Savol %ss muvaffaqiyatli o‘chirildi.") % question.label)
         return redirect("djf_surveys:admin_forms_survey", slug=self.survey.slug)
 
 
@@ -232,12 +265,6 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
             selected_month = None
 
         selected_direction_id = self.request.GET.get('direction')
-        print(f"GET so‘rov parametrlari: {self.request.GET}")
-        # Convert to integers
-        if selected_direction_id == '':
-            print("Yo‘nalish IDsi mavjud emas. U so‘rovda ko‘rsatilmagan bo‘lishi mumkin.")
-        else:
-            print(f"Yo‘nalish ID: {selected_direction_id}")
 
         selected_direction = None
         if selected_direction_id:

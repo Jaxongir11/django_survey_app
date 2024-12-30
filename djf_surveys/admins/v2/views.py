@@ -7,9 +7,8 @@ from django.urls import reverse, reverse_lazy
 from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.http import Http404
-
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
-from djf_surveys.models import Survey, Question, TYPE_FIELD
+from djf_surveys.models import Survey, Question, TYPE_FIELD, TYPE_FIELD_CHOICES
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys.admins.v2.forms import QuestionForm, QuestionWithChoicesForm, QuestionFormRatings
 
@@ -18,7 +17,7 @@ from djf_surveys.admins.v2.forms import QuestionForm, QuestionWithChoicesForm, Q
 class AdminCreateQuestionView(ContextTitleMixin, CreateView):
     template_name = 'djf_surveys/admins/question_form_v2.html'
     success_url = reverse_lazy("djf_surveys:")
-    title_page = _("Add Question")
+    title_page = _("Savol kiritish")
     survey = None
     type_field_id = None
 
@@ -60,7 +59,7 @@ class AdminCreateQuestionView(ContextTitleMixin, CreateView):
         return reverse("djf_surveys:admin_forms_survey", args=[self.survey.slug])
 
     def get_sub_title_page(self):
-        return gettext("Type Field %s") % Question.TYPE_FIELD[self.type_field_id][1]
+        return gettext("Type Field %s") % dict(TYPE_FIELD_CHOICES).get(self.type_field_id, "Unknown")
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -68,7 +67,7 @@ class AdminUpdateQuestionView(ContextTitleMixin, UpdateView):
     model = Question
     template_name = 'djf_surveys/admins/question_form_v2.html'
     success_url = SURVEYS_ADMIN_BASE_PATH
-    title_page = _("Edit Question")
+    title_page = _("Savolni tahrirlash")
     survey = None
     type_field_id = None
 

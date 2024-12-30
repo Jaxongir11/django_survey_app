@@ -2,8 +2,9 @@ import random
 from django.utils.translation import gettext
 from django.db.models import Avg
 from djf_surveys import models
-from djf_surveys.models import TYPE_FIELD, Survey, Question, Answer, Direction, Question2, Answer2, UserRating, UserAnswer2
+from djf_surveys.models import TYPE_FIELD, TYPE_FIELD_CHOICES, Survey, Question, Answer, Direction, Question2, Answer2, UserRating, UserAnswer2
 from djf_surveys.utils import create_star
+import json
 
 
 COLORS = ['#ff80ed', '#065535', '#133337', '#ffc0cb',
@@ -51,7 +52,10 @@ class ChartJS:
         self.element_html = f"""
 <div class="swiper-slide">
     <blockquote class="p-6 border border-gray-100 rounded-lg shadow-lg bg-white">
-      <canvas id="{self.chart_id}" width="{self.width}" height="{self.height}"></canvas>
+        <div class="chart-title">
+            <h2 style="font-family:arial" class="text-xl font-bold mb-4">{self.chart_name}</h2>
+        </div>
+        <canvas id="{self.chart_id}" width="{self.width}" height="{self.height}"></canvas>
     </blockquote>
 </div>
 """
@@ -95,9 +99,38 @@ const config%s = {
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          font: {
+            family: 'Arial',
+            size: 14
+          },
+          generateLabels: function(chart) {
+            const data = chart.data.datasets[0].data;
+            const labels = chart.data.labels;
+            return labels.map(function(label, index) {
+              const value = data[index];
+              return {
+                text: label + ' (' + value + ')',
+                fillStyle: chart.data.datasets[0].backgroundColor[index],
+                hidden: false,
+                index: index
+              };
+            });
+          }
+        }
+      },
+      tooltip: {
+        titleFont: {
+          family: 'Arial',
+          size: 14
+        },
+        bodyFont: {
+          family: 'Arial',
+          size: 14
+        }
       },
       title: {
-        display: true,
+        display: false,
         text: '%s'
       }
     }
@@ -161,6 +194,19 @@ const data%s = {
   }]
 };
 """
+        return script % (self.chart_id, self.chart_id, self.chart_name)
+
+    def _setup(self):
+        script = """
+const data%s = {
+  labels: %s,
+  datasets: [{
+    data: %s,
+    backgroundColor: %s,
+    borderWidth: 1
+  }]
+};
+"""
         return script % (self.chart_id, self.labels, self.data, self.colors)
 
 
@@ -179,7 +225,7 @@ class ChartBarRating(ChartBar):
           <div class="flex justify-center">
               {stars}
           </div>
-          <h5 class="mb-0 mt-1 text-sm"> O‘rtacha qiymat</h5>
+          <h3 class="mb-0 mt-1 text-4xl"> O‘rtacha qiymat</h3>
       </div>
       <canvas id="{self.chart_id}" width="{self.width}" height="{self.height}"></canvas>
     </blockquote>
@@ -238,7 +284,6 @@ class SummaryResponse:
             queryset = self.get_filtered_queryset(queryset)  # Filtrni qo'llash
             count = queryset.count()
             data.append(count)
-
         queryset = Answer.objects.filter(question=question)
         queryset = self.get_filtered_queryset(queryset)  # Filtrni qo'llash
         values_rating = queryset.values_list('value', flat=True)
@@ -248,7 +293,6 @@ class SummaryResponse:
             rating_avg = round(sum(values_convert) / len(values_convert), 1)
         except ZeroDivisionError:
             rating_avg = 0
-
         bar_chart.labels = labels
         bar_chart.data = data
         bar_chart.rate_avg = rating_avg
@@ -278,7 +322,6 @@ class SummaryResponse:
         qs = UserRating.objects.filter(
             user_answer__survey=self.survey
         )
-
         if self.selected_year is not None:
             qs = qs.filter(user_answer__created_at__year=self.selected_year)
         if self.selected_month is not None:
@@ -292,7 +335,6 @@ class SummaryResponse:
 
     def _process_question2_rating_apex(self, question2: Question2):
         qs = self.get_filtered_userrating(question2)
-
 
         # 2) rated_users ni o‘zga quramiz:
         rated_users = (
@@ -341,7 +383,8 @@ class SummaryResponse:
       }}],
       chart: {{
         type: 'bar',
-        height: 400
+        height: 400,
+        fontFamily: 'Arial, sans-serif',
       }},
       colors: ['#003366'],
       plotOptions: {{
@@ -357,7 +400,7 @@ class SummaryResponse:
         offsetY: -20,        // ustun tepasidan -20px balandda chiqsin
         style: {{
           colors: ['#000'],  // qora rang
-          fontSize: '12px'
+          fontSize: '14px',
         }}
       }},
       xaxis: {{
@@ -365,7 +408,7 @@ class SummaryResponse:
         labels: {{
             rotate: -45,
             rotateAlways: true,
-            style: {{ fontSize: '12px' }}
+            style: {{ fontSize: '14px'}}
         }}
       }}
     }};
@@ -377,6 +420,138 @@ class SummaryResponse:
     chart_q2_{question2.id}.render();
     </script>
     """
+        return snippet
+
+    def _process_question2_aggregate_rating_apex(self) -> str:
+        """
+        Barcha Question2 savollariga berilgan javoblarni umumlashtirib, foydalanuvchilarni o'rtacha reytinglari bilan ApexCharts bar chartini yaratadi.
+        """
+        qs = UserRating.objects.filter(user_answer__survey=self.survey)
+
+        # Filtrlarni qo'llash
+        if self.selected_year is not None:
+            qs = qs.filter(user_answer__created_at__year=self.selected_year)
+        if self.selected_month is not None:
+            qs = qs.filter(user_answer__created_at__month=self.selected_month)
+        if self.selected_direction is not None:
+            qs = qs.filter(user_answer__direction=self.selected_direction)
+
+        # Har bir foydalanuvchi uchun o'rtacha reytingni hisoblash
+        aggregated_ratings = (
+            qs.values("rated_user__first_name", "rated_user__last_name")
+                .annotate(avg_rating=Avg("answer2__value"))
+                .order_by("-avg_rating")
+        )
+
+        # Agar hech qanday reyting bo'lmasa, grafikni ko'rsatmaymiz
+        if not aggregated_ratings:
+            return ""
+
+        categories = []
+        data_series = []
+
+        for user in aggregated_ratings:
+            first_name = user["rated_user__first_name"] or ""
+            last_name = user["rated_user__last_name"] or ""
+            full_name = f"{last_name} {first_name}".strip()
+            avg_rating = user["avg_rating"] or 0
+
+            categories.append(full_name)
+            data_series.append(round(avg_rating, 2))
+
+        # Ranglar ro'yxatini tayyorlash
+        colors = ['#4CAF50'] * len(categories)  # Yashil rang, kerakli rangni o'zgartiring
+
+        # JSON formatga o'tkazish
+        categories_json = json.dumps(categories)
+        data_series_json = json.dumps(data_series)
+        colors_json = json.dumps(colors)
+
+        # ApexChart konfiguratsiyasi
+        snippet = f"""
+        <div class="mt-8">
+          <h2 class="text-xl font-bold mb-4">Professor-o'qituvchilarning umumiy reytingi</h2>
+          <div id="apexchart_aggregate_rating" style="height: 400px;"></div>
+        </div>
+        <script>
+        var options_aggregate_rating = {{
+          series: [{{
+            name: 'Ortacha Reyting',
+            data: {data_series_json},
+          }}],
+          chart: {{
+            type: 'bar',
+            height: 400,
+            fontFamily: 'Arial, sans-serif',
+          }},
+          colors: {colors_json},
+          plotOptions: {{
+            bar: {{
+              horizontal: false,
+              columnWidth: '50%',
+              endingShape: 'rounded'
+            }}
+          }},
+          dataLabels: {{
+            enabled: true,
+            formatter: function (val) {{
+              return val;
+            }},
+            style: {{
+              colors: ['#000'],
+              fontSize: '14px',
+              fontFamily: 'Arial, sans-serif'
+            }}
+          }},
+          xaxis: {{
+            categories: {categories_json},
+            labels: {{
+                rotate: -45,
+                rotateAlways: true,
+                style: {{ 
+                    fontSize: '14px',
+                    fontFamily: 'Arial, sans-serif'
+                }}
+            }},
+            title: {{
+              text: 'Foydalanuvchilar'
+            }}
+          }},
+          yaxis: {{
+            title: {{
+              text: 'Ortacha Reyting'
+            }},
+            labels: {{
+                style: {{
+                    fontSize: '14px',
+                    fontFamily: 'Arial, sans-serif'
+                }}
+            }}
+          }},
+          tooltip: {{
+            y: {{
+              formatter: function (val) {{
+                return val
+              }}
+            }}
+          }},
+          title: {{
+            text: 'Barcha savollar boyicha',
+            align: 'center',
+            style: {{
+              fontSize: '16px',
+              fontFamily: 'Arial, sans-serif'
+            }}
+          }}
+        }};
+
+        var chart_aggregate_rating = new ApexCharts(
+          document.querySelector("#apexchart_aggregate_rating"),
+          options_aggregate_rating
+        );
+        chart_aggregate_rating.render();
+        </script>
+        """
         return snippet
 
     def generate_questions(self):
@@ -395,7 +570,7 @@ class SummaryResponse:
                 html_str.append(self._process_rating_type(question))
 
         if not html_str:
-            input_types = ', '.join(str(x[1]) for x in models.Question.TYPE_FIELD if
+            input_types = ', '.join(str(x[1]) for x in TYPE_FIELD if
                                     x[0] in (
                                         models.TYPE_FIELD.radio,
                                         models.TYPE_FIELD.select,
@@ -419,5 +594,10 @@ class SummaryResponse:
         html_str = []
         for question2 in self.survey.questions2.all():
             html_str.append(self._process_question2_rating_apex(question2))
-            # 3) Hamma to‘plangan HTML'ni join qilib qaytarish
+
+        aggregate_chart = self._process_question2_aggregate_rating_apex()
+        if aggregate_chart:
+            html_str.append(aggregate_chart)
+
+        # 3) Hamma to‘plangan HTML'ni join qilib qaytarish
         return " ".join(html_str)

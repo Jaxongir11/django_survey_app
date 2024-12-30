@@ -35,14 +35,32 @@
                     </div>
                 {% endfor %}
 
-                <h2 class="text-xl font-semibold mt-6">O'qituvchilarni baholang</h2>
+                <h2 class="text-xl font-semibold mt-6">O‘quv mashg‘uloti olib borgan professor-o'qituvchilarni baholang</h2>
                 {% for user in eligible_users %}
                     <div class="user-profile p-4 mt-2 mb-0 rounded-lg shadow-md border border-gray-200 bg-white flex">
-                        <div class="user-info flex-[1] flex flex-col items-center">
+                        <div class="user-info flex-[1] flex flex-col items-center text-center">
                         <img src="{{ user.image.url }}" alt="Profil rasmi" class="mb-2 w-40 h-40 rounded-full">
+                        <h3 class="text-xl">
+                            {% if user.departments.all %}
+                                {% for department in user.departments.all %}
+                                    {{ department.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-red-500">Kafedra(sikl) yo'q</span>
+                            {% endif %}
+                        </h3>
+
+                        <h3 class="text-xl">
+                            {% if user.positions.all %}
+                                {% for position in user.positions.all %}
+                                    {{ position.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="text-red-500">Lavozim yo'q</span>
+                            {% endif %}
+                        </h3>
                         <h3 class="text-xl font-bold">{{ user.rank }}</h3>
-                        <h3 class="text-xl font-bold">{{ user.user.get_full_name }}</h3>
-                        <h3 class="text-xl">{{ user.department.name }} {{ user.position.name }}</h3>
+                        <h3 class="text-xl font-bold">{{ user.user.last_name }} {{ user.user.first_name }}</h3>
                         </div>
 
                         <div class="questions flex-[3] ml-4">

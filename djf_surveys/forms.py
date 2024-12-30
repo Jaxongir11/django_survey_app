@@ -104,10 +104,10 @@ class BaseSurveyForm(forms.Form):
             try:
                 field = cleaned_data[field_name]
             except KeyError:
-                raise forms.ValidationError("You must enter valid data")
+                raise forms.ValidationError("Siz to‘g‘ri ma’lumotlarni kiritishingiz shart")
 
             if self.fields[field_name].required and not field:
-                self.add_error(field_name, 'This field is required')
+                self.add_error(field_name, 'Bu maydon to‘ldirilishi shart')
 
         return cleaned_data
 
@@ -149,9 +149,6 @@ class CreateSurveyForm(BaseSurveyForm):
             Answer.objects.create(
                 question=question, value=value, user_answer=user_answer
             )
-
-        for key, val in self.data.items():
-            print("KEY=", key, " VAL=", val)
 
         # Reyting savollarni saqlash
         for key, val in self.data.items():

@@ -3,6 +3,57 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'djf_surveys/css/rating.css' %}"/>
+    <style>
+        .user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .user-name {
+            font-size: 16px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4ade80;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +66,7 @@
             data-te-ripple-color="light"
             type="button">
             {% include "djf_surveys/buttons/add_button.html" with size=6 %}
-            <span class="items-center float-right"> {% trans 'Question' %} </span>
+            <span class="items-center float-right"> {% trans 'Savol qo‘shish' %} </span>
         </button>
     </div>
 
@@ -95,6 +146,31 @@
         {% include 'djf_surveys/components/modal_choice_field_type.html' %}
     </div>
 
+    <div class="max-w-screen-xl px-4 py-16 mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-lg mx-auto">
+            <!-- Existing content... -->
+
+            <h2 class="text-xl font-semibold mb-4">Baholanadigan professor-o‘qituvchilar ro‘yxati</h2>
+            <div class="bg-white shadow overflow-hidden sm:rounded-md">
+                <ul class="divide-y divide-gray-200">
+                    {% for user in eligible_users %}
+                        <li class="user-row">
+                            <span class="user-name">{{ user.rank }} {{ user.user.last_name }} {{ user.user.first_name }}</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" class="can-be-rated-checkbox" data-user-id="{{ user.id }}" {% if user.can_be_rated %}checked{% endif %}>
+                                <span class="slider"></span>
+                            </label>
+                        </li>
+                    {% empty %}
+                        <li class="px-6 py-4">Foydalanuvchilar topilmadi.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- Existing modals... -->
+    </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -123,6 +199,63 @@
                         }
                     });
                 }
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            // Handle sortable if needed
+            $("#sortable").sortable({
+                opacity: 0.7,
+                update: function (event, ui) {
+                    const order = $(this).sortable('toArray');
+                    console.log(order);
+                    $.ajax({
+                        url: "{% url 'djf_surveys:admin_change_order_question' %}",
+                        type: 'POST',
+                        headers: {"X-CSRFToken": '{{ csrf_token }}'},
+                        data: {
+                            'order_question': order.toString(),
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            console.log(data.message);
+                        },
+                        error: function (data) {
+                            alert("{% trans 'An error occurred!' %}");
+                        }
+                    });
+                }
+            });
+
+            // Handle checkbox toggle
+            $('.can-be-rated-checkbox').change(function() {
+                const userId = $(this).data('user-id');
+                const canBeRated = $(this).is(':checked');
+
+                $.ajax({
+                    url: window.location.href,  // Current URL
+                    type: 'POST',
+                    headers: {"X-CSRFToken": '{{ csrf_token }}'},
+                    data: {
+                        'user_id': userId,
+                        'can_be_rated': canBeRated,
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if(response.status === 'success') {
+                            console.log(`User ${userId} can_be_rated set to ${response.can_be_rated}`);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        alert("{% trans 'An error occurred while updating the user status.' %}");
+                        // Optionally, revert the checkbox state
+                        location.reload();
+                    }
+                });
             });
         });
     </script>

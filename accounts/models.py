@@ -1,10 +1,7 @@
-from datetime import date
-from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from PIL import Image
-from birthday import BirthdayField, BirthdayManager
 
 
 class Department(models.Model):
@@ -63,10 +60,6 @@ class Profile(models.Model):
     positions = models.ManyToManyField(Position, through="ProfileDepartmentPosition", related_name="profiles")
     rank = models.ForeignKey(Rank, on_delete=models.SET_NULL, null=True, related_name='rank')
     gender = models.CharField(max_length=5, choices=GENDER_CHOICES, default='E')
-    birthday = BirthdayField(null=True, default=date.today)
-    objects = BirthdayManager()
-    phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Telefon raqam formati: +998901234567")
-    phone_number = models.CharField(validators=[phone_regex], max_length=15, blank=True)
     image = models.ImageField(upload_to='user_image/', default='user_image/default.png')
     can_be_rated = models.BooleanField(default=True)
 

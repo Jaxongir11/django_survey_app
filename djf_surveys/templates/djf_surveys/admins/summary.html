@@ -5,7 +5,7 @@
     {{ chart_js_src|safe }}
     <link rel="stylesheet" href="{% static 'djf_surveys/te-starter/css/tw-elements.min.css' %}">
     <link rel="stylesheet" href="{% static 'djf_surveys/css/rating.css' %}"/>
-{% endblock %}
+{% endblock extra_css%}
 
 {% block content %}
     <div class="container px-5 py-5 ">
@@ -29,36 +29,52 @@
             </div>
         </section>
 
-        <form method="GET" action="">
-            <label for="direction">Kursni tanlang:</label>
-            <select name="direction" id="direction">
-                <option value="">Kurslar</option>
-                {% for direction in directions %}
-                    <option value="{{ direction.id }}" {% if direction.id == selected_direction.id %}selected{% endif %}>
-                        {{ direction.name }}
-                    </option>
-                {% endfor %}
-            </select>
-            <label for="year">Yilni tanlang:</label>
-            <select id="year" name="year">
-                <option value="">Yillar</option>
-                {% for year in years %}
-                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
-                        {{ year }}
-                    </option>
-                {% endfor %}
-            </select>
+        <form method="GET" action="" class="space-y-6 mb-2">
+            <div class="flex flex-col md:flex-row md:items-end md:space-x-4 space-y-4 md:space-y-0">
+                <!-- Kursni tanlang -->
+                <div class="flex flex-col flex-1">
+                    <label for="direction" class="mb-2 text-gray-700 font-semibold">Kursni tanlang:</label>
+                    <select name="direction" id="direction" class="block w-full bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 p-2">
+                        <option value="">Kurslar</option>
+                        {% for direction in directions %}
+                            <option value="{{ direction.id }}" {% if direction.id == selected_direction.id %}selected{% endif %}>
+                                {{ direction.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <label for="month">Oyni tanlang:</label>
-            <select id="month" name="month">
-                <option value="">Oylar</option>
-                {% for month in months %}
-                    <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
-                        {{ month.name}}
-                    </option>
-                {% endfor %}
-            </select>
-            <button type="submit">Natija</button>
+                <!-- Yilni tanlang -->
+                <div class="flex flex-col flex-1">
+                    <label for="year" class="mb-2 text-gray-700 font-semibold">Yilni tanlang:</label>
+                    <select id="year" name="year" class="block w-full bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 p-2">
+                        <option value="">Yillar</option>
+                        {% for year in years %}
+                            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>
+                                {{ year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Oyni tanlang -->
+                <div class="flex flex-col flex-1">
+                    <label for="month" class="mb-2 text-gray-700 font-semibold">Oyni tanlang:</label>
+                    <select id="month" name="month" class="block w-full bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 p-2">
+                        <option value="">Oylar</option>
+                        {% for month in months %}
+                            <option value="{{ month.value }}" {% if month.value == selected_month %}selected{% endif %}>
+                                {{ month.name}}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex flex-col">
+                    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full mt-6 md:mt-0" type="submit">Natija</button>
+                </div>
+            </div>
         </form>
 
 

@@ -4,11 +4,9 @@ from collections import namedtuple
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
 from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-
 from accounts.models import Profile
 from djf_surveys import app_settings
 from djf_surveys.utils import create_star
@@ -76,23 +74,23 @@ class Direction(models.Model):
 
 
 class Survey(BaseModel):
-    name = models.CharField(_("name"), max_length=200)
-    description = models.TextField(_("description"), default='')
+    name = models.CharField(_("nomi"), max_length=200)
+    description = models.TextField(_("ta’rif"), default='')
     slug = models.SlugField(_("slug"), max_length=225, default='')
-    editable = models.BooleanField(_("editable"), default=True,
-                                   help_text=_("Agar false (yolg‘on) bo‘lsa, foydalanuvchi yozuvni tahrirlay olmaydi."))
-    deletable = models.BooleanField(_("deletable"), default=True,
-                                    help_text=_("Agar false (yolg‘on) bo‘lsa, foydalanuvchi yozuvni o'chira olmaydi."))
-    duplicate_entry = models.BooleanField(_("mutiple submissions"), default=False,
-                                          help_text=_("Agar rost (true) bo‘lsa, foydalanuvchi qayta topshirishi mumkin."))
-    private_response = models.BooleanField(_("private response"), default=False,
-                                           help_text=_("Agar rost bo‘lsa, faqat administrator va egasi kira oladi."))
-    can_anonymous_user = models.BooleanField(_("anonymous submission"), default=False,
-                                             help_text=_("Agar True bo‘lsa, autentifikatsiyasiz foydalanuvchi yuboradi."))
-    notification_to = models.TextField(_("Notification To"), blank=True, null=True,
+    editable = models.BooleanField(_("tahrirlanadigan"), default=True,
+                                   help_text=_("Agar belgi qo‘yilmasa, foydalanuvchi yozuvni tahrirlay olmaydi."))
+    deletable = models.BooleanField(_("o‘chirib tashlasa bo‘ladigan"), default=True,
+                                    help_text=_("Agar belgi qo‘yilmasa, foydalanuvchi yozuvni o'chira olmaydi."))
+    duplicate_entry = models.BooleanField(_("bitta foydalanuvchi bir necha marta yuborish mumkin"), default=False,
+                                          help_text=_("Agar belgi qo‘yilsa, foydalanuvchi qayta topshirishi mumkin."))
+    private_response = models.BooleanField(_("xususiy javob"), default=False,
+                                           help_text=_("Agar belgi qo‘yilsa, faqat administrator va egasi kira oladi."))
+    can_anonymous_user = models.BooleanField(_("anonim yuborish"), default=False,
+                                             help_text=_("Agar belgi qo‘yilsa, autentifikatsiyasiz foydalanuvchi yuboradi."))
+    notification_to = models.TextField(_("Bildirishnoma"), blank=True, null=True,
                                        help_text=_("Xabardor qilish uchun elektron pochta manzilingizni kiriting"))
     success_page_content = models.TextField(
-        _("Success Page Content"), blank=True, null=True,
+        _("Muvaffaqiyatli yakunlash sahifasi mazmuni"), blank=True, null=True,
         help_text=_("Muvaffaqiyatli sahifasi shu yerda o‘zgartirishingiz mumkin. HTML sintaksisi qo‘llab-quvvatlanadi")
     )
 
@@ -116,26 +114,26 @@ class Question(BaseModel):
     type_field = models.PositiveSmallIntegerField(_("type of input field"), choices=TYPE_FIELD_CHOICES)
 
     key = models.CharField(
-        _("key"), max_length=225, unique=True, null=True, blank=True,
-        help_text=_("Bu savol uchun noyob kalit, avtomatik yaratishda foydalanishni istasangiz, bo‘sh joyni to‘ldiring.")
+        _("kalit"), max_length=225, unique=True, null=True, blank=True,
+        help_text=_("Noyob kalit savol matnidan avtomatik yaratiladi. Yaratishni istasangiz, bo‘sh joyni to‘ldiring.")
     )
     survey = models.ForeignKey(Survey, related_name='questions', on_delete=models.CASCADE, verbose_name=_("survey"))
-    label = models.CharField(_("label"), max_length=500, help_text=_("Savolingizni shu yerga kiriting."))
+    label = models.CharField(_("Yorliq"), max_length=500, help_text=_("Savolingizni shu yerga kiriting."))
     choices = models.TextField(
-        _("choices"),
+        _("variantlar"),
         blank=True, null=True,
         help_text=_(
-            "Agar maydon turi radio, tanlanadigan yoki ko‘p tanlovli bo‘lsa, ajratilgan variantlarni to‘ldiring"
+            "Agar maydon turi radio, tanlanadigan yoki ko‘p variantli bo‘lsa, ajratilgan variantlarni to‘ldiring"
             "vergullar bilan. Masalan: Erkak, Ayol.")
     )
     help_text = models.CharField(
-        _("help text"),
+        _("yordam matni"),
         max_length=200, blank=True, null=True,
         help_text=_("Bu yerda yordam matnini kiritishingiz mumkin.")
     )
-    required = models.BooleanField(_("required"), default=True,
-                                   help_text=_("Agar True bo‘lsa, foydalanuvchi ushbu savolga javob berishi kerak."))
-    ordering = models.PositiveIntegerField(_("choices"), default=0,
+    required = models.BooleanField(_("talab qilinadi"), default=True,
+                                   help_text=_("Agar belgi qo‘yilsa, foydalanuvchi ushbu savolga javob berishi kerak."))
+    ordering = models.PositiveIntegerField(_("variantlar"), default=0,
                                            help_text=_("So‘rovnomalar doirasida savollar tartibini belgilaydi."))
 
     class Meta:
@@ -221,24 +219,24 @@ class Question2(BaseModel):
         _("type of input field"), choices=[(TYPE_FIELD.rating, _("Rating"))], default=TYPE_FIELD.rating
     )
     key = models.CharField(
-        _("key"), max_length=225, unique=True, null=True, blank=True,
-        help_text=_("Bu savol uchun noyob kalit, avtomatik yaratishda foydalanishni istasangiz, bo‘sh joyni to‘ldiring.")
+        _("kalit"), max_length=225, unique=True, null=True, blank=True,
+        help_text=_("Noyob kalit savol matnidan avtomatik yaratiladi. Yaratishni istasangiz, bo‘sh joyni to‘ldiring.")
     )
     survey = models.ForeignKey(Survey, related_name='questions2', on_delete=models.CASCADE, verbose_name=_("survey"))
-    label = models.CharField(_("label"), max_length=500, help_text=_("Savolingizni shu yerga kiriting."))
+    label = models.CharField(_("yorliq"), max_length=500, help_text=_("Savolingizni shu yerga kiriting."))
     choices = models.TextField(
-        _("choices"),
+        _("variantlar"),
         blank=True, null=True,
-        help_text=_("Reytingda yulduzlar sonini aniqlash uchun, masalan: 5.")
+        help_text=_("Reytingda yulduzlar sonini aniqlash uchun, masalan: 5")
     )
     help_text = models.CharField(
-        _("help text"),
+        _("yordam matni"),
         max_length=200, blank=True, null=True,
-        help_text=_("Bu yerda yordam matnini kiritishingiz mumkin.")
+        help_text=_("Bu yerda yordam matnini kiritishingiz mumkin")
     )
-    required = models.BooleanField(_("required"), default=True,
-                                   help_text=_("Agar True bo‘lsa, foydalanuvchi ushbu savolga javob berishi kerak."))
-    ordering = models.PositiveIntegerField(_("choices"), default=0,
+    required = models.BooleanField(_("talab qilinadi"), default=True,
+                                   help_text=_("Agar belgi qo‘yilsa, foydalanuvchi ushbu savolga javob berishi kerak."))
+    ordering = models.PositiveIntegerField(_("variantlar"), default=0,
                                            help_text=_("So‘rovnomalar doirasida savollar tartibini belgilaydi."))
 
     class Meta:
@@ -303,5 +301,5 @@ class Answer2(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.question}: {self.value} (Rated User: {self.user_rating.rated_user})"
+        return f"{self.question}: {self.value} (Baholangan foydalanuvchi: {self.user_rating.rated_user})"
 

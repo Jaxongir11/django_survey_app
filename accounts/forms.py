@@ -63,20 +63,7 @@ class ProfileUpdateForm(forms.ModelForm):
     )
 
     image = forms.ImageField(widget=forms.FileInput(attrs={'class': 'form-control-file'}))
-    phone_number = forms.RegexField(
-        regex=r'^\+?1?\d{9,15}$',
-        error_messages={
-            'invalid': "Telefon raqami quyidagi formatda kiritilishi kerak: +998901234567"
-        }
-    )
-    birthday = forms.DateField(
-        label="Tug'ilgan kuni",
-        required=True,
-        widget=forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
-        input_formats=["%Y-%m-%d"]
-    )
 
     class Meta:
         model = Profile
-        fields = ['departments', 'positions', 'rank', 'gender', 'birthday', 'phone_number', 'image', 'can_be_rated']
-
+        fields = ['departments', 'positions', 'rank', 'gender', 'image', 'can_be_rated']

@@ -20,7 +20,7 @@ class QuestionWithChoicesForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['choices'].widget = InlineChoiceField()
-        self.fields['choices'].help_text = _("Tanlovni qo'shish uchun <qo'shish> tugmasini bosing")
+        self.fields['choices'].help_text = _("Yana variant qo'shish uchun + tugmasini bosing")
 
 
 class QuestionFormRatings(forms.ModelForm):
