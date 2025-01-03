@@ -1,16 +1,110 @@
-{% extends "base.html" %}
+{% extends "djf_surveys/master.html" %}
 {% load static %}
-{% block title %}Superuser Profile{% endblock title %}
+{% block title %}Admin sahifasi{% endblock title %}
 {% block content %}
-    <!-- Display any additional information specific to superusers -->
-    <h2>Welcome, Superuser!</h2>
-    <p>Here's the superuser profile update form:</p>
+<div class="max-w-2xl mx-auto mt-10 bg-white p-8 rounded shadow">
+    <h2 class="text-2xl text-center font-semibold mb-6">Administrator profili</h2>
 
-    <!-- Render the profile update form -->
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        {{ u_form.as_p }}
-        {{ p_form.as_p }}
-        <button type="submit">Save Changes</button>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- User Update Form -->
+            <div>
+                <h3 class="text-xl font-medium mb-4">Admin ma’lumotlari</h3>
+                {{ u_form.non_field_errors }}
+
+                <div class="mb-4">
+                    <label for="{{ u_form.username.id_for_label }}" class="block mb-1 font-medium text-gray-700">Username</label>
+                    {{ u_form.username }}
+                    {% if u_form.username.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ u_form.username.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ u_form.email.id_for_label }}" class="block mb-1 font-medium text-gray-700">Email</label>
+                    {{ u_form.email }}
+                    {% if u_form.email.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ u_form.email.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ u_form.last_name.id_for_label }}" class="block mb-1 font-medium text-gray-700">Familiyasi</label>
+                    {{ u_form.last_name }}
+                    {% if u_form.last_name.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ u_form.last_name.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ u_form.first_name.id_for_label }}" class="block mb-1 font-medium text-gray-700">Ismi</label>
+                    {{ u_form.first_name }}
+                    {% if u_form.first_name.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ u_form.first_name.errors }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Update Form -->
+            <div>
+                <h3 class="text-xl font-medium mb-4">Qo‘shimcha ma'lumotlar</h3>
+                {{ p_form.non_field_errors }}
+
+                <div class="mb-4">
+                    <label for="{{ p_form.department.id_for_label }}" class="block mb-1 font-medium text-gray-700">Kafedra(sikl) nomi</label>
+                    {{ p_form.department }}
+                    {% if p_form.department.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ p_form.department.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ p_form.position.id_for_label }}" class="block mb-1 font-medium text-gray-700">Lavozimi</label>
+                    {{ p_form.position }}
+                    {% if p_form.position.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ p_form.position.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ p_form.rank.id_for_label }}" class="block mb-1 font-medium text-gray-700">Unvoni</label>
+                    {{ p_form.rank }}
+                    {% if p_form.rank.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ p_form.rank.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ p_form.gender.id_for_label }}" class="block mb-1 font-medium text-gray-700">Jinsi</label>
+                    {{ p_form.gender }}
+                    {% if p_form.gender.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ p_form.gender.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ p_form.image.id_for_label }}" class="block mb-1 font-medium text-gray-700">Profil rasmi</label>
+                    {{ p_form.image }}
+                    {% if p_form.image.errors %}
+                        <p class="text-red-500 text-sm mt-1">{{ p_form.image.errors }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-4 flex items-center">
+                    {{ p_form.can_be_rated }}
+                    <label for="{{ p_form.can_be_rated.id_for_label }}" class="ml-2 text-gray-700">Baholanishi mumkin</label>
+                </div>
+            </div>
+        </div>
+
+        <button
+          type="submit"
+          class="mt-6 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-200">
+          Profilni yangilash
+        </button>
     </form>
+</div>
+
 {% endblock content %}

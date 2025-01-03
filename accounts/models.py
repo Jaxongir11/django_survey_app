@@ -30,17 +30,6 @@ class Position(models.Model):
         super().save(*args, **kwargs)
 
 
-class DepartmentPosition(models.Model):
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    position = models.ForeignKey(Position, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('department', 'position')
-
-    def __str__(self):
-        return f"{self.department.name} - {self.position.name}"
-
-
 class Rank(models.Model):
     name = models.CharField(max_length=25)
 
@@ -56,8 +45,8 @@ GENDER_CHOICES = (
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    departments = models.ManyToManyField(Department, through="ProfileDepartmentPosition", related_name="profiles")
-    positions = models.ManyToManyField(Position, through="ProfileDepartmentPosition", related_name="profiles")
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
+    position = models.ForeignKey(Position, on_delete=models.SET_NULL, null=True, blank=True)
     rank = models.ForeignKey(Rank, on_delete=models.SET_NULL, null=True, related_name='rank')
     gender = models.CharField(max_length=5, choices=GENDER_CHOICES, default='E')
     image = models.ImageField(upload_to='user_image/', default='user_image/default.png')

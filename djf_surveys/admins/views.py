@@ -72,7 +72,7 @@ class AdminSurveyFormView(ContextTitleMixin, FormMixin, DetailView):
 
         # Add eligible_users to context
         context['eligible_users'] = Profile.objects.filter(
-            positions__slug__in=[
+            position__slug__in=[
                 'boshligi', 'boshligi-orinbosari', 'professori', 'dotsenti',
                 'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'
             ]
@@ -254,7 +254,7 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
         current_year = now().year
         selected_year = self.request.GET.get('year', None)
         try:
-            selected_year = int(selected_year) if selected_year else None
+            selected_year = int(selected_year) if selected_year else current_year
         except ValueError:
             selected_year = None
 
@@ -305,7 +305,7 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
                                   selected_direction=selected_direction if selected_direction else None)
 
         # Generate year and month ranges for the form
-        years = range(2023, current_year + 1)
+        years = range(2024, current_year + 1)
         months = [
             {'value': 1, 'name': 'Yanvar'},
             {'value': 2, 'name': 'Fevral'},

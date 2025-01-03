@@ -1,0 +1,13 @@
+{% extends "djf_surveys/master.html" %}
+{% block title %}O‘chirish{% endblock title %}
+{% block content %}
+<div class="max-w-md mx-auto mt-10 bg-white p-8 rounded shadow text-center">
+    <h2 class="text-2xl font-semibold mb-6">O‘chirish</h2>
+    <p class="mb-6">{{ object.username }} nomli foydalanuvchini o‘chirmoqchimisiz?</p>
+    <form method="post" class="flex justify-center space-x-4">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700">Ha, o‘chirish</button>
+        <a href="{% url 'accounts:users_list' %}" class="bg-gray-300 text-gray-700 py-2 px-4 rounded hover:bg-gray-400">Bekor qilish</a>
+    </form>
+</div>
+{% endblock %}

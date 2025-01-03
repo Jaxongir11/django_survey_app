@@ -1,12 +1,15 @@
-from datetime import datetime
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import View
+from django.views.generic import DeleteView
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, UserLoginForm
-from .models import Profile, Position
+from django.contrib.auth.models import User
+from .models import Profile, Department, Position, Rank
 
 
 class CustomLoginView(LoginView):
@@ -56,18 +59,16 @@ class RegisterView(View):
             form.save()
 
             username = form.cleaned_data.get('username')
-            messages.success(request, f'Account created for {username}')
+            messages.success(request, f'{username} nomli akkaunt yaratildi')
 
             return redirect(to='/')
 
         return render(request, self.template_name, {'form': form})
 
     def dispatch(self, request, *args, **kwargs):
-        # will redirect to the home page if a user tries to access the register page while logged in
-        if request.user.is_authenticated:
+        # Agar user login bo'lmagan bo'lsa yoki staff bo'lmasa, ruxsat yo'q
+        if not request.user.is_authenticated or not request.user.is_staff:
             return redirect(to='/')
-
-        # else process dispatch as it otherwise normally would
         return super(RegisterView, self).dispatch(request, *args, **kwargs)
 
 
@@ -81,13 +82,12 @@ def profile(request):
         if u_form.is_valid() and p_form.is_valid():
             u_form.save()
             p_form.save()
-            messages.success(request, f'Akkaunt yangilandi!')
+            messages.success(request, f'Profil muvaffaqiyatli yangilandi!')
             return redirect('accounts:profile')
 
     else:
         u_form = UserUpdateForm(instance=request.user)
-        profile_instance = get_object_or_404(Profile, user=request.user)
-        p_form = ProfileUpdateForm(instance=profile_instance)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
 
     context = {
         'u_form': u_form,
@@ -102,7 +102,80 @@ def profile(request):
         return render(request, 'accounts/profile.html', context)
 
 
-def load_positions(request):
-    department_id = request.GET.get('department')
-    positions = Position.objects.filter(department_id=department_id).order_by('name')
-    return render(request, 'accounts/positions_dropdown_list.html', {'positions': positions})
+class UsersListView(View):
+    template_name = 'accounts/users_list.html'
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        users_qs = User.objects.select_related('profile').all()
+
+        # Filtrlash parametrlari
+        department_id = request.GET.get('department')
+        position_id = request.GET.get('position')
+        rank_id = request.GET.get('rank')
+        gender = request.GET.get('gender')
+
+        # Agar department_id bo‘lsa, shunga mos userlarni filtrlaymiz
+        if department_id:
+            users_qs = users_qs.filter(profile__department_id=department_id)
+
+        if position_id:
+            users_qs = users_qs.filter(profile__position_id=position_id)
+
+        if rank_id:
+            users_qs = users_qs.filter(profile__rank_id=rank_id)
+
+        if gender:
+            users_qs = users_qs.filter(profile__gender=gender)
+
+        # Department nomi bo‘yicha alfavit tartibida saralash
+        users_qs = users_qs.order_by('profile__department__name', 'last_name', 'first_name')
+
+        # Filtr dropdownlarini to‘ldirish uchun
+        departments = Department.objects.all()
+        positions = Position.objects.all()
+        ranks = Rank.objects.all()
+
+        context = {
+            'users_list': users_qs,
+            'departments': departments,
+            'positions': positions,
+            'ranks': ranks,
+            'selected_department': department_id,
+            'selected_position': position_id,
+            'selected_rank': rank_id,
+            'selected_gender': gender
+        }
+        return render(request, self.template_name, context)
+
+
+@login_required
+def edit_profile(request, pk):
+    """Admin (yoki ruxsati bor user) tomonidan boshqa foydalanuvchini tahrirlash"""
+    user_obj = get_object_or_404(User, pk=pk)  # user_id bo‘yicha User ni topamiz
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=user_obj)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=user_obj.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, 'Foydalanuvchi profili yangilandi!')
+            return redirect('accounts:users_list')
+    else:
+        u_form = UserUpdateForm(instance=user_obj)
+        p_form = ProfileUpdateForm(instance=user_obj.profile)
+
+    context = {
+        'u_form': u_form,
+        'p_form': p_form,
+        'edit_user': user_obj
+    }
+    return render(request, 'accounts/profile.html', context)
+
+
+class UserDeleteView(LoginRequiredMixin, DeleteView):
+    model = User
+    template_name = "accounts/delete.html"
+    success_url = reverse_lazy("accounts:users_list")
+
+

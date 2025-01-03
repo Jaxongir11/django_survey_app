@@ -53,10 +53,9 @@ class SurveyFormView(FormMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['eligible_users'] = Profile.objects.filter(
-            positions__slug__in=['boshligi', 'boshligi-orinbosari', 'professori', 'dotsenti', 'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'],
+            position__slug__in=['boshligi', 'boshligi-orinbosari', 'professori', 'dotsenti', 'katta-oqituvchisi', 'oqituvchisi', 'kabinet-boshligi'],
             can_be_rated=True
-        ).distinct()
-
+        ).order_by('department__name')
         context['questions2'] = Question2.objects.filter(survey=self.object)  # Add Question2 to context
         return context
 

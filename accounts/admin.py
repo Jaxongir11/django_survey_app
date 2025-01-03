@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Department, Position, Profile, ProfileDepartmentPosition
+from .models import Department, Position, Profile
 
 
 class DepartmentAdmin(admin.ModelAdmin):
@@ -12,22 +12,12 @@ class PositionAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
 
 
-class ProfileDepartmentPositionInline(admin.TabularInline):
-    model = ProfileDepartmentPosition
-    extra = 1
-
-
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['user', 'list_departments_positions']
-    inlines = [ProfileDepartmentPositionInline]
-
-    def list_departments_positions(self, obj):
-        # Profilega bog'langan barcha department va positionlar ro'yxatini qaytaradi
-        return ", ".join([
-            f"{relation.department.name} - {relation.position.name}"
-            for relation in ProfileDepartmentPosition.objects.filter(profile=obj)
-        ])
-    list_departments_positions.short_description = "Departments & Positions"
+    # Endi 'department' va 'position' ForeignKey bo‘lgani uchun to'g'ridan-to'g'ri ko'rsatish mumkin
+    list_display = ['user', 'department', 'position', 'gender', 'can_be_rated']
+    # Agar xohlasangiz, qidirish va filtr sozlamalarini ham qo‘shishingiz mumkin, masalan:
+    search_fields = ['user__username', 'department__name', 'position__name']
+    list_filter = ['department', 'position', 'gender', 'can_be_rated']
 
 
 admin.site.register(Department, DepartmentAdmin)

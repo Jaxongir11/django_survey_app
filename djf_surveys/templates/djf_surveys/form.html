@@ -41,20 +41,16 @@
                         <div class="user-info flex-[1] flex flex-col items-center text-center">
                         <img src="{{ user.image.url }}" alt="Profil rasmi" class="mb-2 w-40 h-40 rounded-full">
                         <h3 class="text-xl">
-                            {% if user.departments.all %}
-                                {% for department in user.departments.all %}
-                                    {{ department.name }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
+                            {% if user.department %}
+                                {{ user.department.name }}
                             {% else %}
                                 <span class="text-red-500">Kafedra(sikl) yo'q</span>
                             {% endif %}
                         </h3>
 
                         <h3 class="text-xl">
-                            {% if user.positions.all %}
-                                {% for position in user.positions.all %}
-                                    {{ position.name }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
+                            {% if user.position %}
+                                {{ user.position.name }}
                             {% else %}
                                 <span class="text-red-500">Lavozim yo'q</span>
                             {% endif %}
