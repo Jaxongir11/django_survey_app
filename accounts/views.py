@@ -9,7 +9,7 @@ from django.views import View
 from django.views.generic import DeleteView
 from .forms import UserRegisterForm, UserUpdateForm, ProfileUpdateForm, UserLoginForm
 from django.contrib.auth.models import User
-from .models import Profile, Department, Position, Rank
+from .models import Department, Position, Rank
 
 
 class CustomLoginView(LoginView):
@@ -107,7 +107,7 @@ class UsersListView(View):
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        users_qs = User.objects.select_related('profile').all()
+        users_qs = User.objects.select_related('profile').exclude(is_superuser=True, is_staff=True)
 
         # Filtrlash parametrlari
         department_id = request.GET.get('department')
@@ -177,5 +177,3 @@ class UserDeleteView(LoginRequiredMixin, DeleteView):
     model = User
     template_name = "accounts/delete.html"
     success_url = reverse_lazy("accounts:users_list")
-
-

@@ -57,7 +57,7 @@
 
         // Add minimal changelist styling to templates that we have been unable to override (e.g MPTT)
         // Needs to be here and not in change_list.js because this is the only JS we are guaranteed to run
-        // (as its included in base.html)
+        // (as its included in master.html)
         const $changeListTable = $('#changelist .results table');
         if ($changeListTable.length && !$changeListTable.hasClass('table table-striped')) {
             $changeListTable.addClass('table table-striped');

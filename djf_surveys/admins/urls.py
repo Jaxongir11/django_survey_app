@@ -1,7 +1,7 @@
 from django.urls import path
 from djf_surveys.admins import views as admin_views
 from djf_surveys.admins.v2 import views as admin_views_v2
-
+from djf_surveys.admins.views import DirectionsListView, DirectionUpdateView, DirectionDeleteView, DirectionAddView
 
 urlpatterns = [
     path('', admin_views.AdminSurveyListView.as_view(), name='admin_survey'),
@@ -16,4 +16,8 @@ urlpatterns = [
     path('question/ordering/', admin_views.AdminChangeOrderQuestionView.as_view(), name='admin_change_order_question'),
     path('download/survey/<str:slug>/', admin_views.DownloadResponseSurveyView.as_view(), name='admin_download_survey'),
     path('summary/survey/<str:slug>/', admin_views.SummaryResponseSurveyView.as_view(), name='admin_summary_survey'),
+    path('directions/', DirectionsListView.as_view(), name='directions'),
+    path('directions/add/', DirectionAddView.as_view(), name='add-direction'),
+    path('directions/edit/<int:pk>/', DirectionUpdateView.as_view(), name='edit_direction'),
+    path('directions/delete/<int:pk>/', DirectionDeleteView.as_view(), name='delete_direction'),
 ]

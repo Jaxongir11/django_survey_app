@@ -1,16 +1,19 @@
 import csv
 from io import StringIO
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.contrib.admin.views.decorators import staff_member_required
 from django.urls import reverse, reverse_lazy
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import View
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
@@ -332,3 +335,36 @@ class SummaryResponseSurveyView(ContextTitleMixin, DetailView):
             'rated_users': rated_users,
         })
         return context
+
+
+class DirectionsListView(View):
+    template_name = "djf_surveys/admins/directions.html"
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        directions_qs = Direction.objects.all().order_by('name')
+
+        context = {
+            'directions_qs': directions_qs,
+        }
+        return render(request, self.template_name, context)
+
+
+class DirectionUpdateView(UpdateView):
+    model = Direction
+    fields = ["name"]
+    template_name = "djf_surveys/admins/direction_update.html"
+    success_url = reverse_lazy("djf_surveys:directions")
+
+
+class DirectionDeleteView(LoginRequiredMixin, DeleteView):
+    model = Direction
+    template_name = "djf_surveys/admins/direction_delete.html"
+    success_url = reverse_lazy("djf_surveys:directions")
+
+
+class DirectionAddView(LoginRequiredMixin, CreateView):
+    model = Direction
+    fields = ["name"]
+    template_name = "djf_surveys/admins/add_direction.html"
+    success_url = reverse_lazy("djf_surveys:directions")

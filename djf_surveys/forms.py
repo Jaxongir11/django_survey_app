@@ -48,7 +48,7 @@ class BaseSurveyForm(forms.Form):
                 )
             elif question.type_field == TYPE_FIELD.select:
                 choices = make_choices(question)
-                empty_choice = [("", _("Choose"))]
+                empty_choice = [("", _("Tanlash"))]
                 choices = empty_choice + choices
                 self.fields[field_name] = forms.ChoiceField(
                     choices=choices, label=question.label
@@ -114,10 +114,12 @@ class BaseSurveyForm(forms.Form):
 
 class CreateSurveyForm(BaseSurveyForm):
     direction = forms.ModelChoiceField(
-        queryset=Direction.objects.all(),
+        queryset=Direction.objects.all().order_by('name'),
         required=True,
         label="O'qiyotgan kursingizni tanlang:",
-        widget=forms.Select(attrs={'class': 'form-control'})
+        widget=forms.Select(attrs={
+            'class': 'block w-full mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500'
+        })
     )
 
     def __init__(self, survey, user, *args, **kwargs):

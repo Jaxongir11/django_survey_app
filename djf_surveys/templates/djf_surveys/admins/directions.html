@@ -1,0 +1,59 @@
+{% extends "djf_surveys/master.html" %}
+{% load static %}
+{% block title %}Kurslar ro'yxati{% endblock title %}
+{% block content %}
+
+<div class="max-w-6xl mx-auto mt-10 bg-white p-8 rounded shadow">
+  <h2 class="text-2xl font-semibold mb-6 text-center">O‘quv kurslari ro‘yxati</h2>
+
+  <!-- RESULTS TABLE -->
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-100">
+        <tr>
+          <th class="px-1 py-1 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">#</th>
+          <th class="px-1 py-1 text-left text-lg font-medium text-gray-500 uppercase tracking-wider">Kurs nomi</th>
+          <th class="px-1 py-1 text-left text-lg font-medium text-gray-500 uppercase tracking-wider"></th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for direction in directions_qs %}
+        <tr>
+          <td class="px-1 py-1 whitespace-nowrap text-lg text-gray-500">
+            {{ forloop.counter }}
+          </td>
+          <td class="px-1 py-1 whitespace-nowrap text-lg text-gray-900">
+            {{ direction.name }}
+          </td>
+          <td class="px-1 py-1 whitespace-nowrap text-lg text-right space-x-2">
+            <!-- Tahrirlash -->
+            <a href="{% url 'djf_surveys:edit_direction' direction.pk %}"
+               class="inline-block bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded">
+              Tahrirlash
+            </a>
+            <!-- O'chirish -->
+            <a href="{% url 'djf_surveys:delete_direction' direction.pk %}"
+               class="inline-block bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded">
+              O‘chirish
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="px-1 py-1 whitespace-nowrap text-lg text-gray-500">
+            Hozircha kurslar topilmadi.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-6 text-center">
+    <a href="{% url 'djf_surveys:add-direction' %}"
+       class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors duration-200">
+       Yangi kurs qo‘shish
+    </a>
+  </div>
+</div>
+
+{% endblock content %}

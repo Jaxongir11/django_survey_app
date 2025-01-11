@@ -336,7 +336,7 @@ class SummaryResponse:
     def _process_question2_rating_apex(self, question2: Question2):
         qs = self.get_filtered_userrating(question2)
 
-        # 2) rated_users ni o‘zga quramiz:
+        # 2) rated_users ni o‘ziga quramiz:
         rated_users = (
             qs.values("rated_user__first_name", "rated_user__last_name")
                 .annotate(avg_rating=Avg("answer2__value"))
@@ -367,7 +367,7 @@ class SummaryResponse:
             avg_rating = user["avg_rating"] or 0
 
             categories.append(full_name)
-            data_series.append(round(avg_rating, 2))
+            data_series.append(round(avg_rating, 1))
 
         # rang massivni JavaScript formatga keltirish
 
@@ -400,7 +400,7 @@ class SummaryResponse:
         offsetY: -20,        // ustun tepasidan -20px balandda chiqsin
         style: {{
           colors: ['#000'],  // qora rang
-          fontSize: '14px',
+          fontSize: '12px',
         }}
       }},
       xaxis: {{
@@ -426,6 +426,7 @@ class SummaryResponse:
         """
         Barcha Question2 savollariga berilgan javoblarni umumlashtirib, foydalanuvchilarni o'rtacha reytinglari bilan ApexCharts bar chartini yaratadi.
         """
+
         qs = UserRating.objects.filter(user_answer__survey=self.survey)
 
         # Filtrlarni qo'llash
@@ -443,6 +444,20 @@ class SummaryResponse:
                 .order_by("-avg_rating")
         )
 
+        n_users = len(aggregated_ratings)  # baholangan userlar soni
+        if n_users <= 5:
+            column_width = "40%"
+        elif n_users <= 10:
+            column_width = "20%"
+        elif n_users <= 20:
+            column_width = "15%"
+        elif n_users <= 40:
+            column_width = "10%"
+        elif n_users <= 80:
+            column_width = "5%"
+        else:
+            column_width = "3%"
+
         # Agar hech qanday reyting bo'lmasa, grafikni ko'rsatmaymiz
         if not aggregated_ratings:
             return ""
@@ -457,7 +472,7 @@ class SummaryResponse:
             avg_rating = user["avg_rating"] or 0
 
             categories.append(full_name)
-            data_series.append(round(avg_rating, 2))
+            data_series.append(round(avg_rating, 1))
 
         # Ranglar ro'yxatini tayyorlash
         colors = ['#4CAF50'] * len(categories)  # Yashil rang, kerakli rangni o'zgartiring
@@ -488,21 +503,22 @@ class SummaryResponse:
           plotOptions: {{
             bar: {{
               horizontal: false,
-              columnWidth: '50%',
-              endingShape: 'rounded'
+              columnWidth: '{column_width}',
+              endingShape: 'rounded',
+              dataLabels: {{
+                position: 'top'
+                }}
             }}
           }},
           dataLabels: {{
-            enabled: true,
-            formatter: function (val) {{
-              return val;
-            }},
-            style: {{
-              colors: ['#000'],
-              fontSize: '14px',
-              fontFamily: 'Arial, sans-serif'
-            }}
-          }},
+        enabled: true,
+        offsetY: -20,        // ustun tepasidan -20px balandda chiqsin
+        style: {{
+          colors: ['#000'],  // qora rang
+          fontSize: '12px',
+          fontFamily: 'Arial, sans-serif'
+        }}
+      }},
           xaxis: {{
             categories: {categories_json},
             labels: {{
@@ -513,9 +529,6 @@ class SummaryResponse:
                     fontFamily: 'Arial, sans-serif'
                 }}
             }},
-            title: {{
-              text: 'Foydalanuvchilar'
-            }}
           }},
           yaxis: {{
             title: {{
