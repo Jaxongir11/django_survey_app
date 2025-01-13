@@ -47,10 +47,10 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
     position = models.ForeignKey(Position, on_delete=models.SET_NULL, null=True, blank=True)
-    rank = models.ForeignKey(Rank, on_delete=models.SET_NULL, null=True, related_name='rank')
+    rank = models.ForeignKey(Rank, on_delete=models.SET_NULL, null=True, blank=True, related_name='rank')
     gender = models.CharField(max_length=5, choices=GENDER_CHOICES, default='E')
     image = models.ImageField(upload_to='user_image/', default='user_image/default.png')
-    can_be_rated = models.BooleanField(default=True)
+    can_be_rated = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username

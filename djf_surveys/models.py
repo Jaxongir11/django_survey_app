@@ -1,6 +1,7 @@
 import random
 import string
 from collections import namedtuple
+from django.conf import settings
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -8,7 +9,6 @@ from django.utils.text import slugify
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from accounts.models import Profile
-from djf_surveys import app_settings
 from djf_surveys.utils import create_star
 
 
@@ -167,14 +167,10 @@ class UserAnswer(BaseModel):
         return str(self.id)
 
     def get_user_photo(self):
-        default_photo = "default.png"
-        if app_settings.SURVEY_USER_PHOTO_PROFILE:
-            try:
-                photo_attr = getattr(self.user, app_settings.SURVEY_USER_PHOTO_PROFILE, default_photo)
-                return photo_attr() if callable(photo_attr) else photo_attr
-            except AttributeError:
-                return default_photo
-        return default_photo
+        profile = getattr(self.user, 'profile', None)
+        if profile and profile.image:
+            return profile.image.url
+        return settings.MEDIA_URL + 'user_image/default.png'
 
 
 class Answer(BaseModel):
