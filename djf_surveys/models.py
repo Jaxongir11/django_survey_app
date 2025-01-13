@@ -111,7 +111,7 @@ class Survey(BaseModel):
 
 
 class Question(BaseModel):
-    type_field = models.PositiveSmallIntegerField(_("type of input field"), choices=TYPE_FIELD_CHOICES)
+    type_field = models.PositiveSmallIntegerField(_("kiritish maydonining turi"), choices=TYPE_FIELD_CHOICES)
 
     key = models.CharField(
         _("kalit"), max_length=225, unique=True, null=True, blank=True,
@@ -124,7 +124,7 @@ class Question(BaseModel):
         blank=True, null=True,
         help_text=_(
             "Agar maydon turi radio, tanlanadigan yoki ko‘p variantli bo‘lsa, ajratilgan variantlarni to‘ldiring"
-            "vergullar bilan. Masalan: Erkak, Ayol.")
+            "vergullar bilan. Masalan: Erkak, Ayol")
     )
     help_text = models.CharField(
         _("yordam matni"),

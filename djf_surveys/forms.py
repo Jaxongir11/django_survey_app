@@ -6,10 +6,10 @@ from django.core.validators import MaxLengthValidator, MinLengthValidator
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from accounts.models import Profile
-from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question, Direction, Question2, UserAnswer2, UserRating, \
-    Answer2
+from djf_surveys.models import Answer, TYPE_FIELD, UserAnswer, Question, Direction, Question2, \
+    UserAnswer2, UserRating, Answer2
 from djf_surveys.widgets import CheckboxSelectMultipleSurvey, RadioSelectSurvey, DateSurvey, RatingSurvey
-from djf_surveys.app_settings import DATE_INPUT_FORMAT, SURVEY_FIELD_VALIDATORS, SURVEY_EMAIL_FROM
+from djf_surveys.app_settings import DATE_INPUT_FORMAT, SURVEY_FIELD_VALIDATORS
 from djf_surveys.validators import RatingValidator
 
 

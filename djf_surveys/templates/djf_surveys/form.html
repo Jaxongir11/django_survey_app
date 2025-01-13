@@ -65,8 +65,16 @@
                                 <label class="block text-xl font-medium">{{ question.label }}</label>
                                 <div class="rating">
                                     {% for i in "12345" %}
-                                        <input type="radio" id="rating-{{ user.id }}-{{ question.id }}-{{ i }}" name="rating_{{ user.id }}_{{ question.id }}" value="{{ i }}" class="hidden"/>
-                                        <label for="rating-{{ user.id }}-{{ question.id }}-{{ i }}" class="inline-block cursor-pointer text-gray-400 hover:text-yellow-500 big-star">
+                                        <!-- Agar i == "5" bo'lsa, oldindan checked bo'lsin -->
+                                        <input type="radio"
+                                            id="rating-{{ user.id }}-{{ question.id }}-{{ i }}"
+                                            name="rating_{{ user.id }}_{{ question.id }}"
+                                            value="{{ i }}"
+                                            class="hidden"
+                                            {% if i == "5" %}checked{% endif %} />
+
+                                        <label for="rating-{{ user.id }}-{{ question.id }}-{{ i }}"
+                                            class="inline-block cursor-pointer text-gray-400 hover:text-yellow-500 big-star">
                                             ★
                                         </label>
                                     {% endfor %}
@@ -89,6 +97,14 @@
 {% block extra_js %}
     <script src="{% static 'djf_surveys/te-starter/js/tw-elements.umd.min.js' %}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        // Sahifa yuklanganda, checked bo'lgan rating input'larini topamiz
+        document.querySelectorAll('.rating input:checked').forEach((input) => {
+            // Mavjud change event'ni qo‘lda chaqirib beramiz
+            input.dispatchEvent(new Event('change'));
+        });
+        });
+
         document.querySelectorAll('.rating input').forEach((input) => {
             input.addEventListener('change', function() {
                 const name = this.name;

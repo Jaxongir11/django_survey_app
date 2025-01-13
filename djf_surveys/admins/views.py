@@ -1,11 +1,9 @@
 import csv
 from io import StringIO
-
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _
-from django.views import View
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormMixin
@@ -18,7 +16,6 @@ from django.views.generic import View
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.db.models import Avg
-
 from accounts.models import Profile
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
 from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction, Question2, UserRating, Answer2
