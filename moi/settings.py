@@ -27,8 +27,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'crispy_bootstrap5',
-    'crispy_forms',
     'django_extensions',
     # local
     'accounts',
