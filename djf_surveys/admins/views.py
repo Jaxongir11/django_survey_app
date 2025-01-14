@@ -1,3 +1,4 @@
+import codecs
 import csv
 from io import StringIO
 from django.contrib.auth.decorators import login_required
@@ -18,7 +19,7 @@ from django.contrib import messages
 from django.db.models import Avg
 from accounts.models import Profile
 from djf_surveys.app_settings import SURVEYS_ADMIN_BASE_PATH
-from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction, Question2, UserRating, Answer2
+from djf_surveys.models import Survey, Question, UserAnswer, Answer, Direction, UserRating
 from djf_surveys.mixin import ContextTitleMixin
 from djf_surveys.views import SurveyListView
 from djf_surveys.forms import BaseSurveyForm
@@ -212,7 +213,9 @@ class DownloadResponseSurveyView(DetailView):
         survey = self.get_object()
         user_answers = UserAnswer.objects.filter(survey=survey)
         csv_buffer = StringIO()
-        writer = csv.writer(csv_buffer)
+        csv_buffer.write(codecs.BOM_UTF8.decode('utf-8'))
+
+        writer = csv.writer(csv_buffer, delimiter=',')
 
         rows = []
         header = []
@@ -226,7 +229,7 @@ class DownloadResponseSurveyView(DetailView):
             rows.append(user_answer.updated_at.strftime("%Y-%m-%d %H:%M:%S"))
             rows.append(user_answer.direction.name if user_answer.direction else 'yo‘nalish tanlanmagan')
 
-            for answer in user_answer.answer_set.all():
+            for answer in user_answer.answer_set.order_by('question__id'):
                 if index == 0:
                     header.append(answer.question.label)
                 rows.append(answer.get_value_for_csv)
@@ -236,8 +239,9 @@ class DownloadResponseSurveyView(DetailView):
             writer.writerow(rows)
             rows = []
 
-        response = HttpResponse(csv_buffer.getvalue(), content_type="text/csv")
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = f'attachment; filename={survey.slug}.csv'
+        response.write(csv_buffer.getvalue())
         return response
 
 
