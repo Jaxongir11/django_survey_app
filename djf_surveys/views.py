@@ -1,6 +1,4 @@
-from django.contrib.auth import get_user_model
 from django.urls import reverse_lazy, reverse
-from django.utils.text import capfirst
 from django.utils.translation import gettext, gettext_lazy as _
 from django.views.generic.list import ListView
 from django.views.generic.edit import FormMixin
@@ -25,7 +23,7 @@ class SurveyListView(ContextTitleMixin, UserPassesTestMixin, ListView):
     paginator_class = NewPaginator
 
     def test_func(self):
-        return app_settings.SURVEY_ANONYMOUS_VIEW_LIST or self.request.user.is_authenticated
+        return True
 
     def get_queryset(self):
         filter = {}
@@ -37,6 +35,12 @@ class SurveyListView(ContextTitleMixin, UserPassesTestMixin, ListView):
         else:
             object_list = self.model.objects.filter(**filter)
         return object_list
+
+    # def get_template_names(self):
+    #     """Staff foydalanuvchilar uchun admin sahifasini ochish"""
+    #     if self.request.user.is_authenticated and self.request.user.is_staff:
+    #         return ["djf_surveys/admins/survey_list.html"]
+    #     return ["djf_surveys/survey_list.html"]
 
     def get_context_data(self, **kwargs):
         page_number = self.request.GET.get('page', 1)

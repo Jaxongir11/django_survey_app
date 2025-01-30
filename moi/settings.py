@@ -142,5 +142,5 @@ LOGOUT_REDIRECT_URL = LOGIN_URL
 # default value 12
 SURVEY_PAGINATION_NUMBER = {
     'answer_list': 6,
-    'survey_list': 2
+    'survey_list': 4
 }

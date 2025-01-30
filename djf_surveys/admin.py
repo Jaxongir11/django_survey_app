@@ -28,6 +28,7 @@ class AdminAnswer(admin.ModelAdmin):
     get_label.admin_order_field = 'question'
     get_label.short_description = 'Label'
 
+
 class AdminAnswer2(admin.ModelAdmin):
     list_display = ('question', 'value', 'user_rating', 'created_at')
     search_fields = ('question__label', 'value')

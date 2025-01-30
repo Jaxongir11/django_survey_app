@@ -22,6 +22,7 @@ class RatingSurvey(forms.HiddenInput):
         context['widget']['num_ratings'] = self.num_ratings
         return context
 
+
 class InlineChoiceField(forms.HiddenInput):
     template_name = 'djf_surveys/widgets/inline_choices.html'
     extra = 3

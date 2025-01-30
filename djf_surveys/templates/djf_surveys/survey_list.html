@@ -9,6 +9,20 @@
     <div class="container px-5 py-5">
         {% include 'djf_surveys/components/section_welcome.html' %}
 
+        {% if user.is_authenticated and user.is_staff %}
+        <section>
+            <div class="py-6 flex items-center m-2">
+                <h2 class="max-w-xl text-xl font-bold sm:text-xl">
+                    Yangi anketa-so‘rovnoma yaratish
+                </h2>
+
+                <a href="{% url 'djf_surveys:admin_create_survey' %}" class="inline-block px-5 py-3 font-medium text-white bg-blue-500 rounded-lg ml-4">
+                    {% include "djf_surveys/buttons/add_button.html" %}
+                </a>
+            </div>
+        </section>
+        {% endif %}
+
         {% include 'djf_surveys/components/search_form.html' %}
         {% if object_list %}
             <div class="grid xs:grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-4">
